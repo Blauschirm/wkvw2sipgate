@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 # import required modules
-import time
-import sys
+import time, sys, platform
 
 # path and name of the log file
-logfile = '/var/log/logfile.log'
+if platform.system() == 'Windows':
+  logfile = '/log/calendar_to_sipgate.log'
+else:
+  logfile = '/var/log/calendar_to_sipgate.log'
 
 # function to save log messages to specified log file
 def log(msg):
