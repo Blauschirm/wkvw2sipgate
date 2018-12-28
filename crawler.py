@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import datetime
 
 base_url = 'http://notfallplan-dortmund.notfallseelsorge-ekvw.de/?q=user%2Flogin&destination=rufbereitschaft'
 
@@ -16,4 +17,6 @@ soup = BeautifulSoup(r.text)
 
 spans_wo_class = soup.find_all("td", class_="")
 print(len(spans_wo_class))
-    
+
+now = datetime.datetime.now()  # Carsten
+date = now.strftime("%d")  # Carsten
