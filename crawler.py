@@ -20,3 +20,4 @@ print(len(spans_wo_class))
 
 now = datetime.datetime.now()  # Carsten
 date = now.strftime("%d")  # Carsten
+hour= now.hour # Carsten :))))) 
