@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # Verbose logging
-verbose = True
+verbose = False
 
 SIPGATE_PASS_BASE64 = "bWF4LmJvdHNjaGVuQGdtYWlsLmNvbTp2V3JNanJxNWVBdERSSkc="
 SIPGATE_HEADERS = {'Authorization': 'Basic ' + SIPGATE_PASS_BASE64,
@@ -64,7 +64,7 @@ for user in users:
 
             # saving userId and all active phone line ids under the target number. The phone lines are sorted by id (in length and value)
             target_numbers[device['number']] = {'userId': user['id'], 'activePhonelines': sorted(device['activePhonelines'],
-                key=lambda ps: (len(ps['id']), ps['id']))}
+                                                                                                 key=lambda ps: (len(ps['id']), ps['id']))}
 
         else:
             if verbose:
@@ -97,18 +97,14 @@ def set_redirect_target(outbund_number, redirect_target):
         # Redirect calls to the outbund number to the first active phoneline connected with the targeted external phone number
         redirect_target_id = target_numbers[redirect_target]['activePhonelines'][0]['id']
     except:
-        print("ERROR: target phone number {} not found.".format(redirect_target))
+        print("ERROR: target phone number {} not found. Outbund number {} not rerouted".format(
+            redirect_target, outbund_number))
+
         return False
 
     if sipgate_api.request('put', '/numbers/' + outbund_number_id, data='{"endpointId": "' + redirect_target_id + '"}'):
-        if verbose:
-            print("Successfully rerouted outbund number {} to user device number {}".format(outbund_number, redirect_target))
+        print("Successfully rerouted outbund number {} to user device number {}".format(
+            outbund_number, redirect_target))
         return True
     else:
         return False
-
-
-# set the ...211 number to carstens smartphone number
-success1 = set_redirect_target('+4921174959807211', '+4915731443381')
-# set the ..210 number to max's smartphone number
-success2 = set_redirect_target('+4921174959807210', '+491637454149')
