@@ -19,6 +19,9 @@ NUMBER_MAP = {'NFS1': '0211-74959807208', 'NFS2': '0211-74959807209', 'Leitung':
 
 def format_phone_number(number, nationalcode = '+49'):
 
+    if number == None:
+        return None
+    
     # delete everything but digits, except for a '+' in the first position
     # [^0-9\+] matches every character that is not a digit or a + sign
     # (?!^)\+ matches all + signs that are not at at the start of the string
@@ -105,7 +108,7 @@ def AssignNumbersToTimeSlots(double_cell_soup):
 [Leitung_Slot1, Leitung_Slot2] = AssignNumbersToTimeSlots(leitung_soup)
 
 redirects = {}
-
+breakpoint()
 if FirstSlot:
     redirects['NFS1'] = format_phone_number(NFS1_Slot1)
     redirects['NFS2'] = format_phone_number(NFS2_Slot1)
@@ -130,9 +133,10 @@ print(redirects)
 
 
 for key, value in redirects.items():
-    outbundnumber = format_phone_number(NUMBER_MAP[key])
-    if not sipgate_api.set_redirect_target(outbundnumber, value):
-        errors = errors + 1
+    if value != None:
+        outbundnumber = format_phone_number(NUMBER_MAP[key])
+        if not sipgate_api.set_redirect_target(outbundnumber, value):
+            errors = errors + 1
 
 print("Finished with {} error(s) and {} warning(s).".format(errors, warnings))
 breakpoint()
