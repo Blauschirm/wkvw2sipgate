@@ -77,7 +77,7 @@ NFS1 = Leitungen[0]
 NFS2 = Leitungen[1]
 Leitung = Leitungen[2]
 
-# FRAGE: Warum hier href als selector?
+# FRAGE: Warum hier href als selector? - P:href kommt anstatt span wenn es keinen eintrag gibt
 
 nfs1_soup = NFS1.find_all(['span', 'href'])
 nfs2_soup = NFS2.find_all(['span', 'href'])
