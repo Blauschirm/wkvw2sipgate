@@ -6,11 +6,10 @@ def parse(schicht_anfang, schicht_ende, default_number, text_content):
     all times are handled as "24:00" strings
 
     # Format: Uhrzeiten immer mit Doppelpunkt und Minuten als hh:mm
-    # Zeitintervalle mit Bindestrich kennen "-". Leerzeichen sind optional.
-    # offene Angaben mit Schlüsselwoertern "bis" und "ab" vor der Uhrzeit. Gilt ab oder bis Schichtende oder -Anfang.
-    # Telefonnummern ohne Sonder- oder Leerzeichen.
+    # Zeitintervalle mit Bindestrich kennzeichnen "12:00 - 13:00". Leerzeichen sind optional.
+    # offene Angaben mit Schlüsselwoertern "bis" und "ab" vor der Uhrzeit. Gilt ab oder bis Schichtende bzw. -Anfang.
+    # Telefonnummern ohne Sonder- oder Leerzeichen außer '+'.
     # Verschiedene Vetretungen mit Semikolon trennen ";"
-    # Verschachtelte und überlappende Vertretungen sind nicht möglich!
     # Mehrere Uhrzeitbereiche für die selbe Vertretung können mit Komma und "und" aneinander gereiht werden.
     # Beispiel: "bis 10:00 Uhr +491234; bis 12:20, 13:00-14:20 und ab 17:00 Uhr +494321"
 
