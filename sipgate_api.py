@@ -1,10 +1,13 @@
 import requests
-from bs4 import BeautifulSoup
 
 # Verbose logging
-verbose = False
+verbose = True
 
+# alter account ueber max
 SIPGATE_PASS_BASE64 = "bWF4LmJvdHNjaGVuQGdtYWlsLmNvbTp2V3JNanJxNWVBdERSSkc="
+# neuer account ueber carsten
+SIPGATE_PASS_BASE64 = "Y2Fyc3RlbnZlbHRlbEBnbWFpbC5jb206a2FrYXBpcGk="
+
 SIPGATE_HEADERS = {'Authorization': 'Basic ' + SIPGATE_PASS_BASE64,
                    'Accept': 'application/json', 'Content-Type': 'application/json'}
 SIPGATE_BASE_URL = "https://api.sipgate.com/v2"
