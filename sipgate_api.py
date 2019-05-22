@@ -1,19 +1,18 @@
-import requests
+import requests, json
 
 # Verbose logging
 verbose = True
 
-# alter account ueber max
-SIPGATE_PASS_BASE64 = "bWF4LmJvdHNjaGVuQGdtYWlsLmNvbTp2V3JNanJxNWVBdERSSkc="
-# neuer account ueber carsten
-SIPGATE_PASS_BASE64 = "Y2Fyc3RlbnZlbHRlbEBnbWFpbC5jb206a2FrYXBpcGk="
+with open('config.json', 'r') as config_file:
+    config_data = json.load(config_file)
+
+SIPGATE_BASE_URL = config_data["SIPGATE_BASE_URL"]
+SIPGATE_PASS_BASE64 = config_data["SIPGATE_PASS_BASE64"]
 
 SIPGATE_HEADERS = {'Authorization': 'Basic ' + SIPGATE_PASS_BASE64,
                    'Accept': 'application/json', 'Content-Type': 'application/json'}
-SIPGATE_BASE_URL = "https://api.sipgate.com/v2"
 
 # Wrapper for API calls, for better error handling, logging and a foundation for retries
-
 
 class ApiCaller(object):
 

@@ -1,21 +1,14 @@
-import requests
+import requests, json, datetime, re
 from bs4 import BeautifulSoup
-import datetime
-import re
 import sipgate_api
 
-# base_url = 'http://notfallplan-dortmund.notfallseelsorge-ekvw.de/?q=user%2Flogin&destination=rufbereitschaft'
-base_url = 'http://dienstplan.iomt.de'
+with open('config.json', 'r') as config_file:
+    config_data = json.load(config_file)
 
-login_payload = {
-    'name': 'Pablo Gottheil',
-    'pass': 'Auf&290794',
-    # Preferably set your password in an env variable and sub it in.
-    'form_id': 'user_login'
-}
-
+base_url = config_data["real_base_url"]
+login_payload = config_data["schedule_login_payload"]
 #Nummern sind die Nummern des Test Accounts
-NUMBER_MAP = {'NFS1': '0211-74959807208', 'NFS2': '0211-74959807209', 'Leitung': '0211-74959807210'}
+NUMBER_MAP = config_data["NUMBER_MAP"]
 
 def format_phone_number(number, nationalcode = '+49'):
 
@@ -108,7 +101,7 @@ def AssignNumbersToTimeSlots(double_cell_soup):
 [Leitung_Slot1, Leitung_Slot2] = AssignNumbersToTimeSlots(leitung_soup)
 
 redirects = {}
-breakpoint()
+
 if FirstSlot:
     redirects['NFS1'] = format_phone_number(NFS1_Slot1)
     redirects['NFS2'] = format_phone_number(NFS2_Slot1)

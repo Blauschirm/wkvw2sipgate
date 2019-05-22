@@ -2,3 +2,4 @@
 *.pyc
 bs4*
 soupsieve
+config.json
