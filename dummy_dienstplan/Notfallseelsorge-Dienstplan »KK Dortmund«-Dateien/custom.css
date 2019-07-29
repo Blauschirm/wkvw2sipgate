@@ -1,0 +1,47 @@
+/* Conditional Field Zeitraum - versteckt */
+/*
+#conditional-field-zeitraum { display:none; }
+*/
+/* Labels */
+/*
+#conditional-field-mo-mi label,
+#conditional-field-mi-fr label,
+#conditional-field-fr-mo label { display:none; }
+*/
+
+label.option { display:block !important; }
+
+.view-Rufbereitschaft table { margin:0px; }
+.view-Rufbereitschaft tbody { border:none; }
+.view-Rufbereitschaft td,th { padding:0px; }
+.kw { background:#ddd; }
+.tag { background:#f6f6f6; }
+/* .trenner { border-left:1px solid #000; border-right:1px solid #000; } */
+.kreistrenner { border-right:3px solid #aaa; }
+
+.conditional-field .description { color:red; font-size:8pt; }
+
+/* Vorschaubutton ausblenden */
+#edit-preview { display:none; }
+
+.espelkamp, a:link.espelkamp, a:visited.espelkamp, a:active.espelkamp { color:#000; }
+.huellhoerst, a:link.huellhoerst, a:visited.huellhoerst, a:active.huellhoerst  { color:#00AEEF; }
+.luebbecke, a:link.luebbecke, a:visited.luebbecke, a:active.luebbecke  { color:#f00; }
+.pr-oldendorf, a:link.pr-oldendorf, a:visited.pr-oldendorf, a.active.pr-oldendorf { color:#00C761; }
+.stemwede, a:link.stemwede, a:visited.stemwede, a:active.stemwede { color:#00f; }
+.rahden, a:link.rahden, a:visited.rahden, a:active.rahden { color:#EC008C; }
+
+.tooltip {
+    display:none;
+    position:absolute;
+    width: auto;
+    background-color:#2486C3;
+    padding:10px;
+    color:#fff;
+    -webkit-border-radius:5px;
+    -moz-border-radius:5px;
+    border-radius:5px;
+    -moz-box-shadow: 0 0 3px 3px #959595;
+    -webkit-box-shadow: 0 0 3px 3px #959595;
+    box-shadow: 0 0 3px 3px #959595;
+}

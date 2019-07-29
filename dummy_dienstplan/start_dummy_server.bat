@@ -1,0 +1,1 @@
+cmd /k "py -m SimpleHTTPServer 1337"
