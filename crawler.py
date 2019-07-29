@@ -1,11 +1,15 @@
-import requests, json, datetime, re
+import requests, json, re
+from datetime import datetime
 from bs4 import BeautifulSoup
 import sipgate_api
+
+TESTING = True
+
 
 with open('config.json', 'r') as config_file:
     config_data = json.load(config_file)
 
-base_url = config_data["real_base_url"]
+base_url = config_data["test_base_url" if TESTING else "real_base_url"]
 login_payload = config_data["schedule_login_payload"]
 #Nummern sind die Nummern des Test Accounts
 NUMBER_MAP = config_data["NUMBER_MAP"]
@@ -32,34 +36,37 @@ def format_phone_number(number, nationalcode = '+49'):
 errors = 0
 warnings = 0
 
+current_daytime_object = datetime.now()
+current_day_of_month = current_daytime_object.day # Tag im Monat
+current_hour_of_day = current_daytime_object.hour # Stunde des Tages
 
-now = datetime.datetime.now()  # Carsten
-date = now.strftime("%d")  # Carsten, is ein string hier
-date_int = int(date)  # day number, int("08") = 8, also kein problem hier
-hour = now.hour  # Carsten :)))))
-hour_int = int(hour)  # int hour, zb wenn es 22:36 ist ist hour = 22
-
-# nummern für richtigen tag nehmen
-if hour_int < 8:
-    date_int = date_int - 1
+# Zwischen 0 und 8 Uhr ist die Schicht von Gestern dran
+# ToDo am 1. jeden Monats müsste man die letzte Schicht vom letzten Monat betrachten
+if current_hour_of_day < 8:
+    current_day_of_month = current_day_of_month - 1
 
 # take number of CARSTIS time script
-if 8 <= hour_int < 20:
-    FirstSlot = True
-    SecondSlot = False
+if 8 <= current_hour_of_day < 20:
+    first_shift = True
+    second_shift = False
 else:
-    FirstSlot = False
-    SecondSlot = True
+    first_shift = False
+    second_shift = True
 
-r = requests.post(base_url, data=login_payload)
+# Da der Testserver kein Login fordert (und kein POST versteht), 
+# reicht hier ein einfacher GET, für production wird die login_payload gebraucht
+r = requests.get(base_url) if TESTING else requests.post(base_url, data=login_payload)
+if not r.ok:
+    raise Exception("Request to '{}' failed (HTTP Status Code {}): Text: {}".format(r.url, r.status_code, r.text))
 
 soup = BeautifulSoup(r.text, features="html.parser")
+# print(soup)
 
 # class "tag" markiert die tage im Monat
 all_days = soup.find_all(class_="tag")
 
-# date_int ist immer der richtige tag
-current_day = all_days[date_int]
+# current_day_of_month ist immer der richtige tag
+current_day = all_days[current_day_of_month]
 
 day_row = current_day.parent
 
@@ -102,11 +109,11 @@ def AssignNumbersToTimeSlots(double_cell_soup):
 
 redirects = {}
 
-if FirstSlot:
+if first_shift:
     redirects['NFS1'] = format_phone_number(NFS1_Slot1)
     redirects['NFS2'] = format_phone_number(NFS2_Slot1)
     redirects['Leitung'] = format_phone_number(Leitung_Slot1)
-elif SecondSlot:
+elif second_shift:
     redirects['NFS1'] = format_phone_number(NFS1_Slot2)
     redirects['NFS2'] = format_phone_number(NFS2_Slot2)
     redirects['Leitung'] = format_phone_number(Leitung_Slot2)
