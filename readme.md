@@ -31,8 +31,15 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 - BeautifulSoup `python -m pip install beautifulsoup4`
     - `from bs4 import BeautifulSoup`
 
-# config.json
-```
+# Run
+- Set `TESTING` to true or false
+  - If `True` make sure to start the webserver via `dummy_dienstplan/start_dummy_server.bat`
+- Configure via `config.json`
+- Run `python crawler.py`
+- Look at the ouptut, there may be errors and warnings :)
+
+# Configuration: `config.json`
+```json
 {
     "real_base_url" : "echte url",
     "test_base_url" : "test url",
@@ -56,8 +63,7 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 ```
 
 # Ideen wie das ganze Funktionieren könnte
-
-Läuft jede volle Stunde - eher alle 5 minuten
-Lädt sich alle Daten für den aktuellen und den letzten Monat herunter
-Sucht sich den korrekten Zeitslot aus
-Schaltet die Rufumleitungen
+- Läuft jede volle Stunde - eher alle 5 minuten
+- Lädt sich alle Daten für den aktuellen und den letzten Monat herunter
+- Sucht sich den korrekten Zeitslot aus
+- Schaltet die Rufumleitungen

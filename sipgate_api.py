@@ -16,7 +16,7 @@ SIPGATE_HEADERS = {'Authorization': 'Basic ' + SIPGATE_PASS_BASE64,
 
 class ApiCaller(object):
 
-    def __init__(self, base_url, headers, logger=None):
+    def __init__(self, base_url: str, headers, logger=None):
         self.base_url = base_url
         self.headers = headers
         self.logger = logger
@@ -89,23 +89,24 @@ if verbose:
 
 # Function to reroute outbound number to employees phone number
 # returns True for success ans False for Failure
-def set_redirect_target(outbund_number, redirect_target):
+def set_redirect_target(outbund_number: str, redirect_target: str):
     try:
         outbund_number_id = numbers[outbund_number]['id']
     except:
-        print("ERROR: desired outbund number {} not found via api. Make sure to use full number (+49...)".format(outbund_number))
+        print("ERROR: desired outbund number '{}' not found via api. Make sure to use full number (+49...)".format(outbund_number))
         return False
     try:
         # Redirect calls to the outbund number to the first active phoneline connected with the targeted external phone number
         redirect_target_id = target_numbers[redirect_target]['activePhonelines'][0]['id']
     except:
-        print("ERROR: target phone number {} not found. Outbund number {} not rerouted".format(
+        print("ERROR: target phone number '{}' not found. Outbund number '{}' not rerouted".format(
             redirect_target, outbund_number))
 
         return False
 
-    if sipgate_api.request('put', '/numbers/' + outbund_number_id, data='{"endpointId": "' + redirect_target_id + '"}'):
-        print("Successfully rerouted outbund number {} to user device number {}".format(
+
+    if sipgate_api.request('put', '/numbers/' + outbund_number_id, data=json.dumps({'endpointId': redirect_target_id})):
+        print("Successfully rerouted outbund number '{}' to user device number '{}'".format(
             outbund_number, redirect_target))
         return True
     else:
