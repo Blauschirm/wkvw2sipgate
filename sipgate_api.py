@@ -5,15 +5,6 @@ from typing import List, Set, Dict, Tuple, Optional
 # Verbose logging
 verbose = True
 
-with open('config.json', 'r') as config_file:
-    config_data = json.load(config_file)
-
-SIPGATE_BASE_URL = config_data["SIPGATE_BASE_URL"]
-SIPGATE_PASS_BASE64 = config_data["SIPGATE_PASS_BASE64"]
-
-SIPGATE_HEADERS = {'Authorization': 'Basic ' + SIPGATE_PASS_BASE64,
-                   'Accept': 'application/json', 'Content-Type': 'application/json'}
-
 class UserInfo(object):
     def __init__(self, id : str, firstname : str, lastname : str, email : str):
         self.id = id
@@ -100,7 +91,7 @@ class ApiCaller(object):
         ```
         """
         numbers = {}
-        response = sipgate_api.__request('get', '/numbers')
+        response = self.__request('get', '/numbers')
         for item in response['items']:
             numbers[item['number']] = {'id': item['id']} # , 'endpointId': item['endpointId']} ToDo do we need the endpoint?
         
@@ -155,53 +146,60 @@ class ApiCaller(object):
     def forward_outbound_to_private_phone_number(self, outbound_phone_number_id : str, private_phone_number_id : str) -> bool:
         return self.__request('put', '/numbers/' + outbound_phone_number_id, data=json.dumps({'endpointId': private_phone_number_id}))
 
-sipgate_api = ApiCaller(SIPGATE_BASE_URL, SIPGATE_HEADERS)
 
-if verbose:
-    print("-> Get all users")
-
-users = sipgate_api.get_users()
-
-for user in users: 
-    print("user", user)
-
-private_phone_number_to_user_mapping = sipgate_api.fetch_private_phone_number_to_user_mapping(users)
-
-for phone_number in private_phone_number_to_user_mapping: 
-    print("ptu", phone_number, "->", private_phone_number_to_user_mapping[phone_number])
-
-numbers = sipgate_api.get_public_phone_numbers()
-
-if verbose:
-    print("Dictionary with numbers and their ids and endpoints: ", numbers)
-
-def set_redirect_phone_number(outbound_phone_number: str, redirect_phone_number: str):
+class SipgateManager(object):
     """
-    Function to reroute outbound number to employees phone number
-    returns True for success ans False for Failure
-
-    Parameters
-    ----------
-        outbound_phone_number : str
-            Public constant number which shall redirect to the redirect_phone_number.
-        redirect_phone_number : str
-            The number to redirect to.
+    Establishes a connection to sipgate and allows to redirect public phone numbers to private ones.
     """
-    try:
-        outbund_number_id = numbers[outbound_phone_number]['id']
-    except:
-        print(f"ERROR: desired outbund number '{outbound_phone_number}' not found via api. Make sure to use full number (+49...)")
-        return False
-    try:
-        # Redirect calls to the outbund number to the first active phoneline connected with the targeted external phone number
-        redirect_target_id = private_phone_number_to_user_mapping[redirect_phone_number]['activePhonelines'][0]['id']
-    except:
-        print(f"ERROR: target phone number '{redirect_phone_number}' not found. Outbund number '{redirect_phone_number}' not rerouted")
-        return False
+    def __init__(self, base_url, headers):
+        
+        self.__sipgate_api = ApiCaller(base_url, headers)
 
-    if sipgate_api.forward_outbound_to_private_phone_number(outbund_number_id, redirect_target_id):
-        print(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})\
-                to user device number '{redirect_phone_number}'({redirect_target_id})")
-        return True
-    else:
-        return False
+        if verbose:
+            print("-> Get all users")
+
+        users = self.__sipgate_api.get_users()
+
+        for user in users: 
+            print("user", user)
+
+        self.__private_phone_number_to_user_mapping = self.__sipgate_api.fetch_private_phone_number_to_user_mapping(users)
+
+        for phone_number in self.__private_phone_number_to_user_mapping: 
+            print("ptu", phone_number, "->", self.__private_phone_number_to_user_mapping[phone_number])
+
+        self.__numbers = self.__sipgate_api.get_public_phone_numbers()
+
+        if verbose:
+            print("Dictionary with numbers and their ids and endpoints: ", self.__numbers)
+
+    def set_redirect_phone_number(self, outbound_phone_number: str, redirect_phone_number: str) -> bool:
+        """
+        Function to reroute outbound number to employees phone number
+        returns True for success ans False for Failure
+
+        Parameters
+        ----------
+            outbound_phone_number : str
+                Public constant number which shall redirect to the redirect_phone_number.
+            redirect_phone_number : str
+                The number to redirect to.
+        """
+        try:
+            outbund_number_id = self.__numbers[outbound_phone_number]['id']
+        except:
+            print(f"ERROR: desired outbund number '{outbound_phone_number}' not found via api. Make sure to use full number (+49...)")
+            return False
+        try:
+            # Redirect calls to the outbund number to the first active phoneline connected with the targeted external phone number
+            redirect_target_id = self.__private_phone_number_to_user_mapping[redirect_phone_number]['activePhonelines'][0]['id']
+        except:
+            print(f"ERROR: target phone number '{redirect_phone_number}' not found. Outbund number '{redirect_phone_number}' not rerouted")
+            return False
+
+        if self.__sipgate_api.forward_outbound_to_private_phone_number(outbund_number_id, redirect_target_id):
+            print(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})\
+                    to user device number '{redirect_phone_number}'({redirect_target_id})")
+            return True
+        else:
+            return False

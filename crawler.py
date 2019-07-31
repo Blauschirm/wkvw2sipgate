@@ -1,7 +1,7 @@
 import requests, json, re
 from datetime import datetime
 from bs4 import BeautifulSoup
-import sipgate_api
+from sipgate_api import SipgateManager
 
 # ToDo
 # - Logging
@@ -160,6 +160,12 @@ else:
 
 print("Redirects:", redirects)
 
+SIPGATE_BASE_URL = config_data["SIPGATE_BASE_URL"]
+SIPGATE_HEADERS = {'Authorization': 'Basic ' + config_data["SIPGATE_PASS_BASE64"],
+                   'Accept': 'application/json', 'Content-Type': 'application/json'}
+
+sipgate_manager = SipgateManager(SIPGATE_BASE_URL, SIPGATE_HEADERS)
+
 for key, private_phone_number in redirects.items():
     print(f"------------ Rerouting '{key}' ------------")
 
@@ -169,7 +175,7 @@ for key, private_phone_number in redirects.items():
         continue
 
     outbundnumber = format_phone_number(NUMBER_MAP[key])
-    if not sipgate_api.set_redirect_phone_number(outbundnumber, private_phone_number):
+    if not sipgate_manager.set_redirect_phone_number(outbundnumber, private_phone_number):
         errors = errors + 1
 
 print("Finished with {} error(s) and {} warning(s).".format(errors, warnings))
