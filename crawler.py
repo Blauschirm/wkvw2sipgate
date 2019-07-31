@@ -16,7 +16,7 @@ import sipgate_api
 # - Integrationstests
 #   - Input: liste von datums, url, website
 #   - Expected output: Liste von timeslots
-# - Fix Day=1 before 8am bug
+# - Fix Day=1 before 8am bug (e.g. datetime.datetime.now() - datetime.timedelta(days = 1))
 
 # Set to true to use the testing accounts on sipgate and the local http server (make sure it's started)
 
