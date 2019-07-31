@@ -54,10 +54,17 @@ current_daytime_object = datetime.now()
 current_day_of_month = current_daytime_object.day # Tag im Monat
 current_hour_of_day = current_daytime_object.hour # Stunde des Tages
 
+print(f"GETTING DATA FOR DAY={current_day_of_month} HOUR={current_hour_of_day}")
+
 # Zwischen 0 und 8 Uhr ist die Schicht von Gestern dran
 # ToDo am 1. jeden Monats müsste man die letzte Schicht vom letzten Monat betrachten
 if current_hour_of_day < 8:
     current_day_of_month = current_day_of_month - 1
+    if current_day_of_month == 0:
+        # Todo handle this properly: last day of the previous month
+        raise Exception(f"Calculated day of month {current_day_of_month} is invalid (datetime.now is {current_daytime_object})")
+    
+print(f"-> That makes DAY={current_day_of_month} HOUR={current_hour_of_day}")
 
 # take number of CARSTIS time script
 if 8 <= current_hour_of_day < 20:
@@ -152,16 +159,16 @@ else:
 
 print("Redirects:", redirects)
 
-for key, value in redirects.items():
-    print("------------ Rerouting '{}' ------------".format(key))
+for key, private_phone_number in redirects.items():
+    print(f"------------ Rerouting '{key}' ------------")
 
-    if not value: # Matches emptystring and None
+    if not private_phone_number: # Matches emptystring and None
         errors += 1
         print("ERROR: Key '{}' has no assigned phone number, forwarding stays unchanged".format(key))
         continue
 
     outbundnumber = format_phone_number(NUMBER_MAP[key])
-    if not sipgate_api.set_redirect_target(outbundnumber, value):
+    if not sipgate_api.set_redirect_phone_number(outbundnumber, private_phone_number):
         errors = errors + 1
 
 print("Finished with {} error(s) and {} warning(s).".format(errors, warnings))
