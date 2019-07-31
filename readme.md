@@ -14,7 +14,8 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 ## sipgate.com
 - Telefonnummern buchen
 - Weiterleitungen einrichten
-
+- [API Documentation](https://api.sipgate.com/v2/doc#/)
+- [Administration Web UI](https://app.sipgate.com/w0/team/settings/phonenumbers)
 
 ## NFS
 - 3 Öffentliche Nummern
@@ -67,3 +68,36 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 - Lädt sich alle Daten für den aktuellen und den letzten Monat herunter
 - Sucht sich den korrekten Zeitslot aus
 - Schaltet die Rufumleitungen
+
+
+# Trying to understand SIPGATE
+
+### Anschlüsse
+Private nummern, müssen nur eingetragen werden
+
+### Rufnummern
+Öffentlich, muss gebucht werden von SIPGATE
+
+### Telefone
+- Externe Telefone (private telefonnummern eintragen)
+    - Max Mustermann Mobil
+        - Absendernummer: Öffentliche nummer von SIPGATE
+        - Rufnummer: Private nummer von Max
+- Mobiltelefone (SIM-card von sipgate erhalten)
+    - Mobiltelefon von Maximilian Botschen
+- Telefone (VoIP für sipgate konfiguriert)
+
+## Zusammengefasst
+- Account `w0` hat `3` Rufnummern
+- Die Rufnummern sind je einem Anschluss zugewiesen (manche haben auch denselben Anschluss)
+- Jedem Anschluss sind Geräte zugewiesen
+- Jedes Gerät hat eine Nummer (Sidebar entry `Telefone`)
+
+### Appendix
+
+Rufnummer -> Anschluss -> Gerät -> Nummer
+
+|User Interface DE|API               | id   | url |
+|-----------------|------------------|---   |--|
+|Anschluss        | activePhonelines | `p0` | `GET /{userid}/phonelines` | 
+|                 | numbers          |      | `GET /numbers` `GET /{userId}/numbers`|
