@@ -1,7 +1,13 @@
 import re
 from typing import List, Set, Dict, Tuple, Optional
+import logging
 
-def parse(schicht_anfang: str, schicht_ende: str, default_number: str, text_content: str):
+regex_valid_time = r"\d{1,2}\:\d\d"
+regex_from_to = re.compile(f" (?P<from>{regex_valid_time}) (?:uhr)? - (?P<to>{regex_valid_time}) (?:uhr)?".replace(' ', r'\s*'))
+regex_from_or_to = re.compile(f" (?P<fromOrTo>(?:bis)|(?:ab)) (?P<time>{regex_valid_time})".replace(' ', r'\s*'))
+            
+
+def parse(shift_start: str, shift_end: str, default_number: str, text_content: str):
     """
     Returns a list of time intervals with the given phone number for the interval, according to a string with correct formatting
     all times are handled as "24:00" strings
@@ -13,16 +19,23 @@ def parse(schicht_anfang: str, schicht_ende: str, default_number: str, text_cont
     # Verschiedene Vetretungen mit Semikolon trennen ";"
     # Mehrere Uhrzeitbereiche für die selbe Vertretung können mit Komma und "und" aneinander gereiht werden.
     # Beispiel: "bis 10:00 Uhr +491234; bis 12:20, 13:00-14:20 und ab 17:00 Uhr +494321"
+    #
+    # timeslots |           |          |          |              |             | 
+    # segment   |                     |                                         |
 
     Parameters:
-    schicht_anfang (string): regular beginning of shift
-    schicht_ende   (string): regular end of shift
+    shift_start (string): regular beginning of shift
+    shift_end   (string): regular end of shift
     default_number (string): regular phone number for this shift
     text_content   (string): content of the comment box, which gets parsed into the substitution rules 
 
     Returns:
     intervals      (list of lists): list of lists with format [interval_start, interval_end, phone_number]
     """
+
+    logger = logging.getLogger("Parser")
+    logger.debug(f"Processing text '{text_content}'")
+
     # pad all hours, 9:12 -> 09:12 
     text_content = text_content.lower()
     re.sub(r"(?<=\D)(\d:\d\d)", r"0\1", text_content)
@@ -30,42 +43,51 @@ def parse(schicht_anfang: str, schicht_ende: str, default_number: str, text_cont
     pair_id = 1
 
     for substitute in text_content.split(';'):
+        logger.debug(f"Processing substitute '{substitute}'")
+
         numbers = re.findall(r"(?:\s)\+?\d{5,}", substitute)
         if len(numbers) != 1:
-            print("ERROR! Not exactly one telephone number per substitute segment!")
-            continue 
-        else:
-            number = numbers[0]
+            logger.error(f"Found {len(numbers)} telephone numbers in substitute segment '{substitute}' but expected only one")
+            continue
+
+        number = numbers[0]
+        logger.debug(f"  Found phone number '{number}' in substitute '{substitute}'")
+
         for timeslot in re.split(r"(?:und)|,", substitute):
-            valid_time_re = r"\d{1,2}\:\d\d"
-            times = re.findall(valid_time_re, timeslot)
+            logger.debug(f"  Processing timeslot '{timeslot}'")
 
-            if len(times) not in (1, 2):
-                if len(times) > 2:
-                    print("ERROR! To many times without a comma! Segment: " + str(timeslot))
-                continue
-            elif len(times) == 1:
-                time = times[0]
-                # Find all prefixes related to this time in this substitute segment
-                # If the time get mentioned with different prefixes we have a conflict and skip this timeslot
-                prefixes = re.findall(r"((?:bis)|(?:ab))\s*(?=" + time + r")", substitute)
-                if len(set(prefixes)) == 1:
-                    prefix = prefixes[0]
-                    rules.append({'time' : time, 'prefix' : prefix, 'pair' : None, 'number' : number})
-                    if prefix == 'bis':
-                        rules.append({'time' : schicht_anfang, 'prefix' : 'ab', 'pair': None, 'number' : number})
-                else:
-                    print("ERROR! Conflicting prefixes for same time! Ignoring Segment: " + str(timeslot))
-            elif len(times) == 2 and re.match(r".*" + valid_time_re + r"\s*(?:uhr)?\s*-\s*" +  valid_time_re, timeslot):
+            matches = regex_from_to.match(timeslot)
+            if matches:
                 # matches 12:30- 13:20 and 12:30 Uhr - 13:20 Uhr
-                rules.append({'time' : times[0], 'prefix' : "ab", 'pair' : pair_id, 'number' : number})
-                rules.append({'time' : times[1], 'prefix': "bis", 'pair' : pair_id, 'number' : number})
+                time_from, time_to = matches.group('from'),  matches.group('to')
+                logger.debug(f"    Extracted timeslot '{time_from}' to '{time_to}'")
+                rules.append({'time' : time_from, 'prefix' : "ab", 'pair' : pair_id, 'number' : number})
+                rules.append({'time' : time_to, 'prefix': "bis", 'pair' : pair_id, 'number' : number})
                 pair_id += 1
-            else:
-                print("ERROR! Too many rules in one segment. Seperate rules by comma or 'und'. Ignoring Segment: " + str(timeslot))
+                continue
 
-    if not any(rule['time'] == schicht_anfang for rule in rules):
-        rules.append({'time' : schicht_anfang, 'prefix' : "ab", 'pair' : None, 'number' : default_number})
+            
+            matches = regex_from_or_to.match(timeslot)
+            if matches:
+                # Matches 'ab 13:20' or 'bis 13:20'
+                prefix, time = matches.group('fromOrTo'), matches.group('time')
+                logger.debug(f"    Extracted timeslot '{prefix}' '{time}'")
+                if prefix == 'bis':
+                    logger.debug(f"    Equivalent to '{shift_start}' '{time}'")
+                    rules.append({'time' : shift_start, 'prefix' : 'ab', 'pair': None, 'number' : number})
+                    rules.append({'time' : time, 'prefix' : 'bis', 'pair' : None, 'number' : number})
+                    continue
+                elif prefix == 'ab':
+                    logger.debug(f"    Equivalent to '{time}' '{shift_end}'")
+                    rules.append({'time' : time, 'prefix' : 'ab', 'pair': None, 'number' : number})
+                    # rules.append({'time' : shift_end, 'prefix' : 'bis', 'pair' : None, 'number' : number})
+                    continue
+                raise Exception(f"Failed to parse timeslot '{timeslot}', this should never happen")
+
+            logger.error(f"    Failed to parse timeslot '{timeslot}', make sure to use the format 'hh:mm - hh:mm' or 'ab hh:mm' or 'bis hh:mm'")
+
+    if not any(rule['time'] == shift_start for rule in rules):
+        rules.append({'time' : shift_start, 'prefix' : "ab", 'pair' : None, 'number' : default_number})
 
     rules = sorted(rules, key=lambda d: d['time'] + d['prefix'])
 
@@ -73,34 +95,55 @@ def parse(schicht_anfang: str, schicht_ende: str, default_number: str, text_cont
     # If we encouter a substitution ending rule, we need to change back to the previous number, so we need a stack to keep
     # track of the currently active numbers and take the most recent one of those
 
+    # stack.pop, stack.append
+    # stack.last()
+
     intervals = []
     stack = [{'pair': None, 'number': default_number}]
     for rule in rules:
         time = rule.pop('time')
         if rule.pop('prefix') == 'ab':
             stack.insert(0, rule)
-        else:
+        else: # bis
             if rule in stack:
-                stack.remove(rule)
+                stack.remove(rule) # remove previously added 'ab' with same number & pair id
 
         intervals.append([time, stack[0]['number']])
 
-    for i in range(len(intervals)):
-        if i+1 < len(intervals):
-            intervals[i].insert(1, intervals[i+1][0])
-        else:
-            intervals[i].insert(1, schicht_ende)
+    for i in range(len(intervals)-1):
+        intervals[i].insert(1, intervals[i+1][0])
+    intervals[-1].insert(1, shift_end)
 
-    return intervals
+    no_empty_intervals = filter(lambda interval: interval[0] != interval[1], intervals)
+    return list(no_empty_intervals)
+
+
+import unittest
+class TestParserMethod(unittest.TestCase):
+
+    def test_parsers_result_against_expected_shift_sequence(self):  
+        shift_start = "08:00"
+        shift_end   = "20:00"
+        default_number = "+49767676"
+
+        test1 = "bis 12:00 Uhr +491231; ab 17:00 Uhr +467898; 13:30 Uhr - 14:15 Uhr, 14:30-14:45, ab 16:00 Uhr +472892; 16:00-16:20 +4934623"
+
+        expected_intervals = [
+            ['08:00', '12:00', ' +491231'],
+            ['12:00', '13:30', '+49767676'],
+            ['13:30', '14:15', ' +472892'],
+            ['14:15', '14:30', '+49767676'],
+            ['14:30', '14:45', ' +472892'],
+            ['14:45', '16:00', '+49767676'],
+            ['16:00', '16:20', ' +4934623'],
+            ['16:20', '17:00', ' +472892'],
+            ['17:00', '20:00', ' +467898']
+        ]
+
+        actual_intervals = parse(shift_start, shift_end, default_number, test1)
+        
+        self.assertSequenceEqual(expected_intervals, actual_intervals)
 
 if (__name__ == "__main__"):
-    schicht_anfang = "09:00"
-    schicht_ende   = "18:00"
-    default_number = "+49767676"
-
-    test1 = "bis 12:00 Uhr +491231; ab 17:00 Uhr +467898; 13:30 Uhr - 14:15 Uhr, 14:30-14:45, ab 16:00 Uhr +472892; 16:00-16:20 +4934623"
-
-    intervals = parse(schicht_anfang, schicht_ende, default_number, test1)
-    print("intervals:")
-    for line in intervals:
-        print(line)
+    logging.basicConfig(level=logging.DEBUG)
+    unittest.main()
