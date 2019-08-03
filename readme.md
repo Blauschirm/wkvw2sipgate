@@ -40,30 +40,7 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 - Look at the ouptut, there may be errors and warnings :)
 
 # Configuration: `config.json`
-```json
-{
-    "real_base_url" : "echte url",
-    "test_base_url" : "test url",
-
-    "schedule_login_payload" : {
-        "name": "username",
-        "pass": "passwort",
-        "form_id": "user_login"
-    },
-
-    "SIPGATE_BASE_URL" : "https://api.sipgate.com/v2",
-    "SIPGATE_PASS_BASE64_OLD" : "2nd test account for sipgate api",
-    "SIPGATE_PASS_BASE64" : "1st test account for sipgate api",
-
-    "NUMBER_MAP" : {
-        "NFS1": "Öffentliche Nummer 1", 
-        "NFS2": "Öffentliche Nummer 2",
-        "Leitung": "Nummer 3? Organisationsprobleme für NFS1/NFS2?"
-    },
-
-    "LOG_LEVEL" : "DEBUG" or "INFO" or "WARNING" or "ERROR" or "Critical"
-}
-```
+[config.example.json](./config.example.json) nach `config.json` kopieren und Werte in `[eckigen Klammern]` ersetzen.
 
 # Ideen wie das ganze Funktionieren könnte
 - Läuft jede volle Stunde - eher alle 5 minuten

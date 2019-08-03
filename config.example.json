@@ -1,0 +1,30 @@
+{
+    "TESTING" : "[true to use the test_base_url, false to use real_base_url]",
+    "real_base_url" : "[shift schedule website]",
+    "test_base_url" : "http://localhost:8081",
+
+    "schedule_login_payload" : {
+        "name": "[Username]",
+        "pass": "[Password]",
+        "form_id": "user_login"
+    },
+    "sipgate": {
+        "base_url" : "https://api.sipgate.com/v2",
+        "pass_base64" : "[base64 encoded username and password]"
+    },
+    "NUMBER_MAP" : {
+        "NFS1": "[Public phone number 1]", 
+        "NFS2": "[Public phone number 2]",
+        "Leitung": "[Public phone number 3]"
+    },
+
+    "logging": {
+        "log_path" : "logs",
+        "log_level" : "DEBUG",
+        "rotate": {
+            "backupCount": 10,
+            "when": "D",
+            "interval": 1
+        }
+    }
+}
