@@ -4,3 +4,4 @@ bs4*
 soupsieve
 config.json
 .mypy_cache
+logs
