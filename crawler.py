@@ -169,6 +169,6 @@ for key, private_phone_number in redirects.items():
         errors = errors + 1
 
 if errors or warnings:
-    logger.warning("Finished with {errors} error(s) and {warnings} warning(s).")
+    logger.warning(f"Finished with {errors} error(s) and {warnings} warning(s).")
 else:
-    logger.info("Finished without errors or warnings")#
+    logger.info("Finished without errors or warnings")

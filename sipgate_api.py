@@ -1,9 +1,7 @@
 import requests
 import json
+import logging
 from typing import List, Set, Dict, Tuple, Optional
-
-# Verbose logging
-verbose = True
 
 class UserInfo(object):
     def __init__(self, id : str, firstname : str, lastname : str, email : str):
@@ -28,7 +26,8 @@ class ApiCaller(object):
     def __init__(self, base_url: str, headers, logger=None):
         self.base_url = base_url
         self.headers = headers
-        self.logger = logger    
+        self.logger = logger   
+        self.__logger = logging.getLogger(ApiCaller.__name__)
 
     def __request(self, http_method, relative_url, data=None, headers=None):
         """
@@ -53,7 +52,7 @@ class ApiCaller(object):
 
         except requests.exceptions.RequestException as e:
             # Log error e to log
-            print(e)
+            self.__logger.error(e)
             return False
 
     def get_users(self) -> List[UserInfo]:
@@ -123,23 +122,21 @@ class ApiCaller(object):
             for device_dict in response['items']:
                 device_phone_number = device_dict.get('number')
                 if not device_phone_number:
-                    if verbose:
-                        print(f"device {device_dict['id']} of user {user.lastname} ({user.id}) does not have a linked phone number")
+                    self.__logger.info(f"device {device_dict['id']} of user {user.lastname} ({user.id}) does not have a linked phone number")
                     continue
 
                 if device_phone_number in target_phone_numbers:
                     if target_phone_numbers[device_phone_number]['userId'] != user.id:
-                        print(f"Warning! Number {device_phone_number} from user {user.id} was already target number of user {target_phone_numbers[device_phone_number]}. Skipping.")
+                        self.__logger.warning(f"Number {device_phone_number} from user {user.id} was already target number of user {target_phone_numbers[device_phone_number]}. Skipping.")
                     else:
-                        print(f"Warning! Number {device_phone_number} from user {user.id} was already entered.")
+                        self.__logger.info(f"Number {device_phone_number} from user {user.id} is a duplicate.")
                     continue
 
                 # saving userId and all active phone line ids under the target number. The phone lines are sorted by id (in length and value)
                 target_phone_numbers[device_phone_number] = {'userId': user.id, 'activePhonelines': sorted(
                     device_dict['activePhonelines'], key=lambda ps: (len(ps['id']), ps['id']))}
 
-        if verbose:
-            print("Dictionary with target_numbers with their user's ids and active phone lines: ", target_phone_numbers)
+        self.__logger.debug(f"Dictionary with target_numbers with their user's ids and active phone lines: {target_phone_numbers}")
             
         return target_phone_numbers
     
@@ -151,27 +148,35 @@ class SipgateManager(object):
     """
     Establishes a connection to sipgate and allows to redirect public phone numbers to private ones.
     """
-    def __init__(self, base_url, headers):
+    
+    def __init__(self, base_url: str, headers: dict):
+        """
+        Parameters
+        ----------
+        base_url
+            Base URL of the SIPGATE API
+        headers
+            Headers to authenticated with SIPGATE
+        """
         
         self.__sipgate_api = ApiCaller(base_url, headers)
-
-        if verbose:
-            print("-> Get all users")
+        self.__logger = logging.getLogger(SipgateManager.__name__)
+        
+        self.__logger.debug("Get all users")
 
         users = self.__sipgate_api.get_users()
 
         for user in users: 
-            print("user", user)
+            self.__logger.debug(f"Found user {user}")
 
         self.__private_phone_number_to_user_mapping = self.__sipgate_api.fetch_private_phone_number_to_user_mapping(users)
 
         for phone_number in self.__private_phone_number_to_user_mapping: 
-            print("ptu", phone_number, "->", self.__private_phone_number_to_user_mapping[phone_number])
+            self.__logger.debug(f"Public phone number {phone_number} maps to private phone number {self.__private_phone_number_to_user_mapping[phone_number]}")
 
         self.__numbers = self.__sipgate_api.get_public_phone_numbers()
 
-        if verbose:
-            print("Dictionary with numbers and their ids and endpoints: ", self.__numbers)
+        self.__logger.debug(f"Dictionary with numbers and their ids and endpoints: {self.__numbers}")
 
     def set_redirect_phone_number(self, outbound_phone_number: str, redirect_phone_number: str) -> bool:
         """
@@ -188,18 +193,21 @@ class SipgateManager(object):
         try:
             outbund_number_id = self.__numbers[outbound_phone_number]['id']
         except:
-            print(f"ERROR: desired outbund number '{outbound_phone_number}' not found via api. Make sure to use full number (+49...)")
+            self.__logger.error(f"Desired outbund number '{outbound_phone_number}' not found via api. Make sure to use full number (+49...)")
             return False
         try:
             # Redirect calls to the outbund number to the first active phoneline connected with the targeted external phone number
             redirect_target_id = self.__private_phone_number_to_user_mapping[redirect_phone_number]['activePhonelines'][0]['id']
         except:
-            print(f"ERROR: target phone number '{redirect_phone_number}' not found. Outbund number '{redirect_phone_number}' not rerouted")
+            self.__logger.error(f"Target phone number '{redirect_phone_number}' not found. Outbund number '{redirect_phone_number}' not rerouted")
             return False
 
         if self.__sipgate_api.forward_outbound_to_private_phone_number(outbund_number_id, redirect_target_id):
-            print(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})\
-                    to user device number '{redirect_phone_number}'({redirect_target_id})")
+            self.__logger.info(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})"
+                + f" to user device number '{redirect_phone_number}'(id: {redirect_target_id})")
             return True
         else:
             return False
+
+    def __str__(self):
+        return f"[{SipgateManager.__name__}<{self.__sipgate_api.base_url}>]"
