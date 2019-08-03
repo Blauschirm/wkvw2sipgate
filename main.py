@@ -11,15 +11,16 @@ if __name__ == "__main__":
     print(f"Starting with LOG_LEVEL={LOG_LEVEL}")
     
     # Define formatting
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    timestamp_formatter = logging.Formatter('%(asctime)s - %(levelname)-7s - %(name)-20s - %(message)s')
+    formatter = logging.Formatter('%(levelname)-7s - %(name)-20s - %(message)s')
     # console logger
     ch = logging.StreamHandler()
     ch.setLevel(LOG_LEVEL)
     ch.setFormatter(formatter)
     # file logger
-    fh = logging.handlers.TimedRotatingFileHandler(f'{LOG_PATH}/log.log', when='S', interval=1, backupCount=10)
+    fh = logging.handlers.TimedRotatingFileHandler(f'{LOG_PATH}/log.log', when='D', interval=1, backupCount=10)
     fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
+    fh.setFormatter(timestamp_formatter)
     # configure logging
     logging.basicConfig(
         level=LOG_LEVEL,
@@ -31,11 +32,7 @@ if __name__ == "__main__":
     logger.info("binfo")
     logging.info('Root said this')
 
-    for i in range(1000):
-        time.sleep(0.0.1)
-        logger.info(f"Slept {i}s")
-
-
+    import crawler
 
 
 

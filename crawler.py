@@ -2,6 +2,9 @@ import requests, json, re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
+import logging
+
+logger = logging.getLogger('crawler')
 
 with open('config.json', 'r') as config_file:
     config_data = json.load(config_file)
@@ -11,6 +14,8 @@ base_url = config_data["test_base_url" if TESTING else "real_base_url"]
 login_payload = config_data["schedule_login_payload"]
 #Nummern sind die Nummern des Test Accounts
 NUMBER_MAP = config_data["NUMBER_MAP"]
+
+logger.info(f"Test mode is {'enabled' if TESTING else 'disabled'}")
 
 def format_phone_number(number: str, nationalcode: str = '+49'):
 
@@ -38,7 +43,7 @@ current_daytime_object = datetime.now()
 current_day_of_month = current_daytime_object.day # Tag im Monat
 current_hour_of_day = current_daytime_object.hour # Stunde des Tages
 
-print(f"GETTING DATA FOR DAY={current_day_of_month} HOUR={current_hour_of_day}")
+logger.debug(f"GETTING DATA FOR DAY={current_day_of_month} HOUR={current_hour_of_day}")
 
 # Zwischen 0 und 8 Uhr ist die Schicht von Gestern dran
 # ToDo am 1. jeden Monats müsste man die letzte Schicht vom letzten Monat betrachten
@@ -48,7 +53,7 @@ if current_hour_of_day < 8:
         # Todo handle this properly: last day of the previous month
         raise Exception(f"Calculated day of month {current_day_of_month} is invalid (datetime.now is {current_daytime_object})")
     
-print(f"-> That makes DAY={current_day_of_month} HOUR={current_hour_of_day}")
+logger.debug(f"-> That makes DAY={current_day_of_month} HOUR={current_hour_of_day}")
 
 # take number of CARSTIS time script
 if 8 <= current_hour_of_day < 20:
@@ -60,6 +65,8 @@ else:
 
 # Da der Testserver kein Login fordert (und kein POST versteht), 
 # reicht hier ein einfacher GET, für production wird die login_payload gebraucht
+logger.debug(f"Connecting to shift-server at {base_url}")
+
 r = requests.get(base_url) if TESTING else requests.post(base_url, data=login_payload)
 if not r.ok:
     raise Exception("Request to '{}' failed (HTTP Status Code {}): Text: {}".format(r.url, r.status_code, r.text))
@@ -93,14 +100,14 @@ leitung_soup = Leitung.find_all(['span', 'href'])
 def AssignNumbersToTimeSlots(double_cell_soup, phone_line: str):
     global warnings
     if len(double_cell_soup) == 4:
-        print('INFO: Two entries, one for each shift for line {}'.format(phone_line))
+        logger.info(f'Two entries, one for each shift for line {phone_line}')
         
         FirstNumber = double_cell_soup[1]
         SecondNumber = double_cell_soup[3]
         slot1 = FirstNumber.contents[0]
         slot2 = SecondNumber.contents[0]
     elif len(double_cell_soup) == 2:
-        print('WARNING: Only a single entry. Using the single entry for both shifts for line {}'.format(phone_line))
+        logger.warning(f'Only a single entry. Using the single entry for both shifts for line {phone_line}')
         warnings += 1
 
         FirstNumber = double_cell_soup[1]
@@ -120,12 +127,12 @@ def AssignNumbersToTimeSlots(double_cell_soup, phone_line: str):
 redirects = {}
 
 if first_shift:
-    print('INFO: 1. shift selected')
+    logger.info('1. shift selected')
     redirects['NFS1'] = format_phone_number(NFS1_Slot1)
     redirects['NFS2'] = format_phone_number(NFS2_Slot1)
     redirects['Leitung'] = format_phone_number(Leitung_Slot1)
 elif second_shift:
-    print('INFO: 2. shift selected')
+    logger.info('2. shift selected')
     redirects['NFS1'] = format_phone_number(NFS1_Slot2)
     redirects['NFS2'] = format_phone_number(NFS2_Slot2)
     redirects['Leitung'] = format_phone_number(Leitung_Slot2)
@@ -141,24 +148,27 @@ else:
 # n7 = format_phone_number("0+1637454")
 # n7 = format_phone_number("0491637454")
 
-print("Redirects:", redirects)
+logger.info(f"Redirects: {redirects}")
 
-SIPGATE_BASE_URL = config_data["SIPGATE_BASE_URL"]
-SIPGATE_HEADERS = {'Authorization': 'Basic ' + config_data["SIPGATE_PASS_BASE64"],
+SIPGATE_BASE_URL = config_data["sipgate"]["base_url"]
+SIPGATE_HEADERS = {'Authorization': 'Basic ' + config_data["sipgate"]["pass_base64"],
                    'Accept': 'application/json', 'Content-Type': 'application/json'}
 
 sipgate_manager = SipgateManager(SIPGATE_BASE_URL, SIPGATE_HEADERS)
 
 for key, private_phone_number in redirects.items():
-    print(f"------------ Rerouting '{key}' ------------")
+    logger.info(f"------------ Rerouting '{key}' ------------")
 
     if not private_phone_number: # Matches emptystring and None
         errors += 1
-        print("ERROR: Key '{}' has no assigned phone number, forwarding stays unchanged".format(key))
+        logger.error(f"Key '{key}' has no assigned phone number, forwarding stays unchanged")
         continue
 
     outbundnumber = format_phone_number(NUMBER_MAP[key])
     if not sipgate_manager.set_redirect_phone_number(outbundnumber, private_phone_number):
         errors = errors + 1
 
-print("Finished with {} error(s) and {} warning(s).".format(errors, warnings))
+if errors or warnings:
+    logger.warning("Finished with {errors} error(s) and {warnings} warning(s).")
+else:
+    logger.info("Finished without errors or warnings")#
