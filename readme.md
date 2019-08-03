@@ -59,7 +59,9 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
         "NFS1": "Öffentliche Nummer 1", 
         "NFS2": "Öffentliche Nummer 2",
         "Leitung": "Nummer 3? Organisationsprobleme für NFS1/NFS2?"
-    }
+    },
+
+    "LOG_LEVEL" : "DEBUG" or "INFO" or "WARNING" or "ERROR" or "Critical"
 }
 ```
 
