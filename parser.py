@@ -1,6 +1,7 @@
 import re
+from typing import List, Set, Dict, Tuple, Optional
 
-def parse(schicht_anfang, schicht_ende, default_number, text_content):
+def parse(schicht_anfang: str, schicht_ende: str, default_number: str, text_content: str):
     """
     Returns a list of time intervals with the given phone number for the interval, according to a string with correct formatting
     all times are handled as "24:00" strings

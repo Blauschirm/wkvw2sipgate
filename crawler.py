@@ -3,23 +3,6 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
 
-# ToDo
-# - Logging
-# - E-Mails (mailgun)
-#   - Fehlermeldungen auch schon für den nächsten Tag
-#   - Bestätigung für (vielleicht nur virtuelle/dry-run) Umleitungen -> Simulationsfunktion
-#       - config.jons: dryrun: Benutzt sipgate api nicht.
-# - In Funktionen verpacken
-#   - Tests
-#   - config.json nur einmal gelesen wird, der rest wird dann injected
-# - parser.py benutzen? Freitextfeld/Infofeld (i) auslesen und anwenden
-# - Integrationstests
-#   - Input: liste von datums, url, website
-#   - Expected output: Liste von timeslots
-# - Fix Day=1 before 8am bug (e.g. datetime.datetime.now() - datetime.timedelta(days = 1))
-
-# Set to true to use the testing accounts on sipgate and the local http server (make sure it's started)
-
 with open('config.json', 'r') as config_file:
     config_data = json.load(config_file)
 
@@ -29,7 +12,7 @@ login_payload = config_data["schedule_login_payload"]
 #Nummern sind die Nummern des Test Accounts
 NUMBER_MAP = config_data["NUMBER_MAP"]
 
-def format_phone_number(number: str, nationalcode = '+49'):
+def format_phone_number(number: str, nationalcode: str = '+49'):
 
     if number == None:
         return None

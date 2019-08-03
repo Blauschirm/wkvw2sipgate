@@ -117,7 +117,7 @@ class ApiCaller(object):
         # - Type2: Sipgate sim card
         # - Type3: Sipgate VOIP
 
-        target_phone_numbers = {}
+        target_phone_numbers: Dict = {}
         for user in users: # todo get users
             response = self.__request('get', '/' + user.id + '/devices')
             for device_dict in response['items']:
