@@ -1,18 +1,21 @@
 # ToDo
-- [ ] Logging
+- [x] Logging
 - [ ] E-Mails (mailgun)
   - [ ] Fehlermeldungen auch schon für den nächsten Tag
-  - [ ] Bestätigung für (vielleicht nur virtuelle/dry-run) Umleitungen -> Simulationsfunktion
-      - [ ] config.jons: dryrun: Benutzt sipgate api nicht.
+  - [x] Confirimation for (maybe only virtual/dry-run) re-routings
+      - [x] config.json: dryrun: Uses Sipgate API only to get data but does not change anything
+      - [ ] Actually send an email here?!
 - [ ] In Funktionen/Klassen verpacken
     - [x] `sipgate_api.py`
-    - [x] `parser.py`
-    - [ ] crawler.py
+    - [x] `messageparser.py`
+    - [ ] `crawler.py`
+        - [ ] Blauschirm has already done quite a bit here, but more is required to get rid of the global variables and to make the methods less cohesive?
 - [ ] Tests
     - [ ] Integrationstests
     - [ ] Input: liste von datums, url, website
     - [ ] Expected output: Liste von timeslots
+    - [x] `messageparser.py`
 - [x] config.json nur einmal gelesen wird, der rest wird dann injected
-- [ ] parser.py benutzen? Freitextfeld/Infofeld (i) auslesen und anwenden
+- [ ] Use `messageparser.py` to read the `Freitextfeld/Infofeld` and apply it
 - [ ] Fix Day=1 before 8am bug (e.g. datetime.datetime.now() - datetime.timedelta(days = 1))
 

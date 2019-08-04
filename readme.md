@@ -2,6 +2,8 @@
 
 This program aims to crawl a timetable of phone dates and transfer those via the sipgate api into the telefon system.
 
+For progress please see [our todo list](./todo.md).
+
 ## Aufgabe
 
 Die NFS bietet 3 Telefonnummern an die ständig besetzt sein sollen.
