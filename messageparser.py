@@ -28,8 +28,7 @@ class TimeRule(object):
     
     def __eq__(self, other) -> bool:
         """
-        Returns true if other equals this rule in regards of pair id and phone number.
-        NB: If the `phone_number`s match and `pair_id`s are both None true is returned!
+        Equality based only on `pair_id` and `phone_number`!
         """
         return (self.pair_id == other.pair_id) and (self.phone_number == other.phone_number)
 
@@ -91,7 +90,7 @@ def parse_rules_from_message(shift_start: str, shift_end: str, default_number: s
             logger.error(f"    Failed to parse timeslot '{timeslot}', make sure to use the format 'hh:mm - hh:mm' or 'ab hh:mm' or 'bis hh:mm'")
 
     if not any(rule.time == shift_start for rule in rules):
-        rules.append({'time' : shift_start, 'prefix' : "ab", 'pair' : None, 'number' : default_number})
+        rules.append(TimeRule(time = shift_start, from_or_till = FromOrTill.FROM, phone_number = number))
 
     return TimeRule.sort(rules)
 
@@ -101,13 +100,14 @@ def time_rules_to_interval_list(rules: List[TimeRule], default_number: str, shif
     # track of the currently active numbers and take the most recent one of those
 
     intervals = []
-    stack: List[TimeRule] = [TimeRule(None, None, default_number, None)] # [{'pair': None, 'number': default_number}]
+    # On the stack only the phone_number and pair_id are relevant
+    stack: List[TimeRule] = [TimeRule("", FromOrTill.FROM, default_number, None)]
     for rule in rules:
-        if rule.from_or_till == FromOrTill.FROM: # FROm
+        if rule.from_or_till == FromOrTill.FROM:
             stack.insert(0, rule)
         else: # TILL
             if rule in stack:
-                stack.remove(rule) # remove previously added 'ab' with same number & pair id
+                stack.remove(rule) # remove previously added FROM with same phone_number & pair_id
 
         intervals.append([rule.time, stack[0].phone_number])
 
