@@ -1,7 +1,7 @@
 {
     "TESTING" : "[true to use the test_base_url, false to use real_base_url]",
-    "real_base_url" : "[shift schedule website]",
-    "test_base_url" : "http://localhost:8081",
+    "real_base_url" : "[shift schedule website. Must end in a forwardslash so that e.g. 2019-07 can be appended to retrieve July 2019's data]",
+    "test_base_url" : "http://localhost:8081/",
 
     "schedule_login_payload" : {
         "name": "[Username]",
@@ -10,7 +10,8 @@
     },
     "sipgate": {
         "base_url" : "https://api.sipgate.com/v2",
-        "pass_base64" : "[base64 encoded username and password]"
+        "pass_base64" : "[base64 encoded username and password]",
+        "dryrun" : false
     },
     "NUMBER_MAP" : {
         "NFS1": "[Public phone number 1]", 
