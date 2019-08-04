@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
 
 logger = logging.getLogger('crawler')
+warnings, errors = 0, 0
 
 def format_phone_number(phone_number: str, country_code: str = '+49'):
     """
