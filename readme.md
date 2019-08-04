@@ -45,7 +45,8 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 - Look at the ouptut, there may be errors and warnings :)
 
 ## Running tests
-`pytest -vv`
+- `pytest -vv` to run all unit tests
+- `pytest -vv .\test_file.py` to run only a specific set of unit tests
 
 # Configuration: `config.json`
 [config.example.json](./config.example.json) nach `config.json` kopieren und Werte in `[eckigen Klammern]` ersetzen.
