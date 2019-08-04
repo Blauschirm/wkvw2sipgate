@@ -5,7 +5,6 @@ import logging
 regex_valid_time = r"\d{1,2}\:\d\d"
 regex_from_to = re.compile(f" (?P<from>{regex_valid_time}) (?:uhr)? - (?P<to>{regex_valid_time}) (?:uhr)?".replace(' ', r'\s*'))
 regex_from_or_to = re.compile(f" (?P<fromOrTo>(?:bis)|(?:ab)) (?P<time>{regex_valid_time})".replace(' ', r'\s*'))
-            
 
 def parse(shift_start: str, shift_end: str, default_number: str, text_content: str):
     """
@@ -116,34 +115,3 @@ def parse(shift_start: str, shift_end: str, default_number: str, text_content: s
 
     no_empty_intervals = filter(lambda interval: interval[0] != interval[1], intervals)
     return list(no_empty_intervals)
-
-
-import unittest
-class TestParserMethod(unittest.TestCase):
-
-    def test_parsers_result_against_expected_shift_sequence(self):  
-        shift_start = "08:00"
-        shift_end   = "20:00"
-        default_number = "+49767676"
-
-        test1 = "bis 12:00 Uhr +491231; ab 17:00 Uhr +467898; 13:30 Uhr - 14:15 Uhr, 14:30-14:45, ab 16:00 Uhr +472892; 16:00-16:20 +4934623"
-
-        expected_intervals = [
-            ['08:00', '12:00', ' +491231'],
-            ['12:00', '13:30', '+49767676'],
-            ['13:30', '14:15', ' +472892'],
-            ['14:15', '14:30', '+49767676'],
-            ['14:30', '14:45', ' +472892'],
-            ['14:45', '16:00', '+49767676'],
-            ['16:00', '16:20', ' +4934623'],
-            ['16:20', '17:00', ' +472892'],
-            ['17:00', '20:00', ' +467898']
-        ]
-
-        actual_intervals = parse(shift_start, shift_end, default_number, test1)
-        
-        self.assertSequenceEqual(expected_intervals, actual_intervals)
-
-if (__name__ == "__main__"):
-    logging.basicConfig(level=logging.DEBUG)
-    unittest.main()

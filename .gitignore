@@ -5,3 +5,6 @@ soupsieve
 config.json
 .mypy_cache
 logs
+# pytest
+lastfailed
+nodeids
