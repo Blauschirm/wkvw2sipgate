@@ -4,6 +4,9 @@ import logging
 from typing import List, Set, Dict, Tuple, Optional
 
 class UserInfo(object):
+    """
+    Holds information about users (retrieved from the SIPGATE API).
+    """
     def __init__(self, id : str, firstname : str, lastname : str, email : str):
         self.id = id
         self.firstname = firstname
@@ -12,11 +15,6 @@ class UserInfo(object):
     
     def __str__(self):
         return f"[User ID={self.id} FirstName={self.firstname} LastName={self.lastname} Email={self.email}]"
-
-class PublicPhonenumber(object):
-    def __init__(self, id : str, phone_number : str):
-        self.id = id
-        self.phone_number = phone_number
 
 class ApiCaller(object):
     """
@@ -149,7 +147,7 @@ class SipgateManager(object):
     Establishes a connection to sipgate and allows to redirect public phone numbers to private ones.
     """
     
-    def __init__(self, base_url: str, headers: dict):
+    def __init__(self, base_url: str, headers: dict, dryrun: bool = False):
         """
         Parameters
         ----------
@@ -157,8 +155,11 @@ class SipgateManager(object):
             Base URL of the SIPGATE API
         headers
             Headers to authenticated with SIPGATE
+        dryrun
+            If true `set_redirect_phone_number` does not actually reroute phone numbers 
+            but just logs intended changes to WARNING.
         """
-        
+        self.__dryrun = dryrun
         self.__sipgate_api = ApiCaller(base_url, headers)
         self.__logger = logging.getLogger(SipgateManager.__name__)
         
@@ -202,12 +203,17 @@ class SipgateManager(object):
             self.__logger.error(f"Target phone number '{redirect_phone_number}' not found. Outbund number '{redirect_phone_number}' not rerouted")
             return False
 
-        if self.__sipgate_api.forward_outbound_to_private_phone_number(outbund_number_id, redirect_target_id):
-            self.__logger.info(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})"
-                + f" to user device number '{redirect_phone_number}'(id: {redirect_target_id})")
-            return True
+        if not self.__dryrun:
+            if self.__sipgate_api.forward_outbound_to_private_phone_number(outbund_number_id, redirect_target_id):
+                self.__logger.info(f"Successfully rerouted outbund number '{outbound_phone_number}'({outbund_number_id})"
+                    + f" to user device number '{redirect_phone_number}'(id: {redirect_target_id})")
+                return True
+            else:
+                return False
         else:
-            return False
+            self.__logger.warning(f"[DRYRUN] Would have rerouted outbund number '{outbound_phone_number}'({outbund_number_id})"
+                    + f" to user device number '{redirect_phone_number}'(id: {redirect_target_id}) otherwise.")
+            return True
 
     def __str__(self):
         return f"[{SipgateManager.__name__}<{self.__sipgate_api.base_url}>]"
