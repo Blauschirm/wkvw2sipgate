@@ -29,8 +29,13 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 
 # Installation
 - Python3
-- BeautifulSoup `python -m pip install beautifulsoup4`
+- `beautifulsoup4` to crawl the HTML website for the time schedule
+    - `python -m pip install beautifulsoup4`
     - `from bs4 import BeautifulSoup`
+- `phonenumbers` to parse phone numbers
+
+## For devs also
+- `pytest` to run unit tests
 
 # Run
 - Set `TESTING` to true or false
@@ -38,6 +43,9 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 - Configure via `config.json`
 - Run `python crawler.py`
 - Look at the ouptut, there may be errors and warnings :)
+
+## Running tests
+`pytest -vv`
 
 # Configuration: `config.json`
 [config.example.json](./config.example.json) nach `config.json` kopieren und Werte in `[eckigen Klammern]` ersetzen.
