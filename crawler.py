@@ -29,6 +29,7 @@ def format_phone_number(phone_number: str, country_code: str = '+49'):
             new_phone_number = country_code + new_phone_number
     return new_phone_number
 
+
 def fetch_shift_schedule_entries(base_url, login_payload, is_first_shift, target_daytime_object):
     """
     Parameters:
@@ -126,6 +127,7 @@ def AssignNumbersToTimeSlots(double_cell_soup, phone_line: str):
 
     return slot1, slot2  # give attribute of certain leitung
 
+
 def determine_target_date(nextday = False):
     """
     Gives the current datetime object, or the one from yesterday if the previous days nightshift is required.
@@ -146,6 +148,7 @@ def determine_target_date(nextday = False):
         target_daytime_object = target_daytime_object - timedelta(days=1)
     logger.debug(f"target datetime is {datetime.strftime(target_daytime_object, '%d.%m.%Y %H:%M')}")
     return target_daytime_object
+
 
 def make_redirects(sipgate_base_url, sipgate_headers, number_map, redirects, dryrun):
     global warnings, errors, logger
