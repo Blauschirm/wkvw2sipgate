@@ -58,7 +58,7 @@ def fetch_shift_schedule_entries(base_url, login_payload, is_first_shift, target
     if not r.ok:
         raise Exception("Request to '{}' failed (HTTP Status Code {}): Text: {}".format(r.url, r.status_code, r.text))
 
-    soup = BeautifulSoup(r.text, features="html.parser")
+    soup = BeautifulSoup(r.content, features="html.parser")
     # print(soup)
 
     # class "tag" markiert die tage im Monat
