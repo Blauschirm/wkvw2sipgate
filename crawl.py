@@ -103,7 +103,7 @@ def get_shift_info(shift) -> Optional[ShiftInfo]:
     if len(spans) == 2:
         note_img = shift.find('img', {"class": "telinfo"}) # there's a note attached to this
         note = note_img.get("title") if note_img else None
-        
+
         return ShiftInfo(name=spans[0].text,
             phone_number=spans[1].text,
             note=note)
@@ -111,7 +111,7 @@ def get_shift_info(shift) -> Optional[ShiftInfo]:
     raise Exception(f"Found {len(spans)} spans in shift, expected 0 or 2", shift, spans)
 
 class DayInfo:
-    def __init__(self, day: str, groups: List[List[Optional[ShiftInfo]]], note: str = None):
+    def __init__(self, day: str, groups: List[List[Optional[ShiftInfo]]], note: ShiftInfo = None):
         self.day = day
         self.groups = groups
         self.note = note
@@ -143,7 +143,7 @@ def get_day_info(day_row) -> DayInfo:
     groups = map(lambda group: list(map(get_shift_info, get_shifts_from_group(group))), groups)
     return DayInfo(day=tds[0].text.strip(),
         groups=list(groups),
-        note=tds[-1].text.strip())
+        note=get_shift_info(tds[-1]))
 
 if __name__ == "__main__":
     html = get_html_of_month("http://localhost:8081/", 2019, 7, testing=True)
@@ -154,13 +154,11 @@ if __name__ == "__main__":
     for i, day_row in enumerate(day_rows):
         try:
             day_info = get_day_info(day_row)
-            print(f"{i}. row: {day_info.day}")
+            print(f"{i}. row: {day_info.day}, note: {day_info.note}")
             for group_id, shifts in enumerate(day_info.groups):
                 print(f"  Group {group_id}")
                 for shift_id, shift in enumerate(shifts):
                     print(f"    Shift {shift_id} {shift}")
-            # mm = map(lambda shifts: list(filter(lambda shift: shift and shift.note, shifts)), shift_groups["groups"])
-            # print(i, shift_groups["day"], list(mm))
         except Exception as exception:
             print(i, "EXC", exception)
 
