@@ -1,6 +1,7 @@
 import pytest
 import messageparser
 
+
 def test_TimeRule_sort_GivenSameTime_SortsByFromOrTill_And_PersistsRelativeOrder():
     rules = [
         messageparser.TimeRule(time="08:00", from_or_till=messageparser.FromOrTill.FROM, pair_id=1, phone_number="0"),
@@ -9,6 +10,7 @@ def test_TimeRule_sort_GivenSameTime_SortsByFromOrTill_And_PersistsRelativeOrder
     ]
     expected_order = [rules[0], rules[2], rules[1]]
     assert expected_order == messageparser.TimeRule.sort(rules)
+
 
 def test_TimeRule_sort_GivenDifferentTimes_SortsByTimeAndFromOrTill():
     rules = [
@@ -19,6 +21,7 @@ def test_TimeRule_sort_GivenDifferentTimes_SortsByTimeAndFromOrTill():
     ]
     expected_order = [rules[3], rules[1], rules[0], rules[2]]
     assert expected_order == messageparser.TimeRule.sort(rules)
+
 
 def test_parse_rules_from_message():  
     shift_start = "08:00"
@@ -45,6 +48,7 @@ def test_parse_rules_from_message():
     actual_rules = messageparser.parse_rules_from_message(shift_start, shift_end, default_number, test_message)
 
     assert expected_rules == actual_rules
+
 
 def test_time_rules_to_interval_list():  
     shift_end = "20:00"

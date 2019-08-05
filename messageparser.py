@@ -7,12 +7,14 @@ regex_valid_time = r"\d{1,2}\:\d\d"
 regex_from_to = re.compile(f" (?P<from>{regex_valid_time}) (?:uhr)? - (?P<to>{regex_valid_time}) (?:uhr)?".replace(' ', r'\s*'))
 regex_from_or_to = re.compile(f" (?P<fromOrTo>(?:bis)|(?:ab)) (?P<time>{regex_valid_time})".replace(' ', r'\s*'))
 
+
 class FromOrTill(Enum):
     FROM = 'ab'
     TILL = 'bis'
 
+
 class TimeRule(object):
-    def __init__(self, time: str, from_or_till: FromOrTill, phone_number: str, pair_id: int = None, ):
+    def __init__(self, time: str, from_or_till: FromOrTill, phone_number: str, pair_id: int = None):
         self.time = time
         self.from_or_till = from_or_till
         self.pair_id = pair_id
@@ -25,7 +27,7 @@ class TimeRule(object):
 
     def __str__(self):
         return f"[TimeRule<{self.from_or_till} {self.time}, pair={self.pair_id}, number={self.phone_number}>]"
-    
+
     def __eq__(self, other) -> bool:
         """
         Equality based only on `pair_id` and `phone_number`!
@@ -34,7 +36,8 @@ class TimeRule(object):
 
     @staticmethod
     def sort(rules: List) -> List:
-        return sorted(rules, key = lambda rule: rule.sortable_key)
+        return sorted(rules, key=lambda rule: rule.sortable_key)
+
 
 def parse_rules_from_message(shift_start: str, shift_end: str, default_number: str, message: str):
     logger = logging.getLogger("Parser")
@@ -63,13 +66,13 @@ def parse_rules_from_message(shift_start: str, shift_end: str, default_number: s
             matches = regex_from_to.match(timeslot)
             if matches:
                 # matches 12:30- 13:20 and 12:30 Uhr - 13:20 Uhr
-                time_from, time_till = matches.group('from'),  matches.group('to')
+                time_from, time_till = matches.group('from'), matches.group('to')
                 logger.debug(f"    Extracted timeslot '{time_from}' to '{time_till}'")
-                rules.append(TimeRule(time = time_from, from_or_till = FromOrTill.FROM, phone_number = number, pair_id = pair_id))
-                rules.append(TimeRule(time = time_till, from_or_till = FromOrTill.TILL, phone_number = number, pair_id = pair_id))
+                rules.append(TimeRule(time=time_from, from_or_till=FromOrTill.FROM, phone_number=number, pair_id=pair_id))
+                rules.append(TimeRule(time=time_till, from_or_till=FromOrTill.TILL, phone_number=number, pair_id=pair_id))
                 pair_id += 1
                 continue
-            
+
             matches = regex_from_or_to.match(timeslot)
             if matches:
                 # Matches 'ab 13:20' or 'bis 13:20'
@@ -77,22 +80,23 @@ def parse_rules_from_message(shift_start: str, shift_end: str, default_number: s
                 logger.debug(f"    Extracted timeslot '{prefix}' '{time}'")
                 if prefix == 'bis':
                     logger.debug(f"    Equivalent to '{shift_start}' '{time}'")
-                    rules.append(TimeRule(time = shift_start, from_or_till = FromOrTill.FROM, phone_number = number))
-                    rules.append(TimeRule(time = time, from_or_till = FromOrTill.TILL, phone_number = number))
+                    rules.append(TimeRule(time=shift_start, from_or_till=FromOrTill.FROM, phone_number=number))
+                    rules.append(TimeRule(time=time, from_or_till=FromOrTill.TILL, phone_number=number))
                     continue
                 elif prefix == 'ab':
                     logger.debug(f"    Equivalent to '{time}' '{shift_end}'")
-                    rules.append(TimeRule(time = time, from_or_till = FromOrTill.FROM, phone_number = number))
-                    rules.append(TimeRule(time = shift_end, from_or_till = FromOrTill.TILL, phone_number = number)) # superfluous
+                    rules.append(TimeRule(time=time, from_or_till=FromOrTill.FROM, phone_number=number))
+                    rules.append(TimeRule(time=shift_end, from_or_till=FromOrTill.TILL, phone_number=number))  # superfluous
                     continue
                 raise Exception(f"Failed to parse timeslot '{timeslot}', this should never happen")
 
             logger.error(f"    Failed to parse timeslot '{timeslot}', make sure to use the format 'hh:mm - hh:mm' or 'ab hh:mm' or 'bis hh:mm'")
 
     if not any(rule.time == shift_start for rule in rules):
-        rules.append(TimeRule(time = shift_start, from_or_till = FromOrTill.FROM, phone_number = number))
+        rules.append(TimeRule(time=shift_start, from_or_till=FromOrTill.FROM, phone_number=default_number))
 
     return TimeRule.sort(rules)
+
 
 def time_rules_to_interval_list(rules: List[TimeRule], default_number: str, shift_end: str):
     # tricky: we have to translate the rules into a continuous list of intervals with the correct number for that interval
@@ -105,18 +109,19 @@ def time_rules_to_interval_list(rules: List[TimeRule], default_number: str, shif
     for rule in rules:
         if rule.from_or_till == FromOrTill.FROM:
             stack.insert(0, rule)
-        else: # TILL
+        else:  # TILL
             if rule in stack:
-                stack.remove(rule) # remove previously added FROM with same phone_number & pair_id
+                stack.remove(rule)  # remove previously added FROM with same phone_number & pair_id
 
         intervals.append([rule.time, stack[0].phone_number])
 
-    for i in range(len(intervals)-1):
-        intervals[i].insert(1, intervals[i+1][0])
+    for i in range(len(intervals) - 1):
+        intervals[i].insert(1, intervals[i + 1][0])
     intervals[-1].insert(1, shift_end)
 
     no_empty_intervals = filter(lambda interval: interval[0] != interval[1], intervals)
     return list(no_empty_intervals)
+
 
 def get_interval_list_from_message(shift_start: str, shift_end: str, default_number: str, message: str):
     """
@@ -144,8 +149,8 @@ def get_interval_list_from_message(shift_start: str, shift_end: str, default_num
     intervals      (list of lists): list of lists with format [interval_start, interval_end, phone_number]
     """
 
-    rules = parse_rules_from_message(shift_start = shift_start,
-                                     shift_end = shift_end,
-                                     default_number = default_number,
-                                     message = message)
+    rules = parse_rules_from_message(shift_start=shift_start,
+                                     shift_end=shift_end,
+                                     default_number=default_number,
+                                     message=message)
     return time_rules_to_interval_list(rules, default_number, shift_end)
