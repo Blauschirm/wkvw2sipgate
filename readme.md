@@ -35,6 +35,7 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
     - `python -m pip install beautifulsoup4`
     - `from bs4 import BeautifulSoup`
 - `phonenumbers` to parse phone numbers
+- `dataclasses` when using `< Python 3.7`
 
 ## For devs also
 - `pytest` to run unit tests
