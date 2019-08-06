@@ -154,21 +154,21 @@ if __name__ == "__main__":
     # Constants
     SHIFT_STARTS = ["08:00", "20:00"]
     SHIFT_ENDS = ["20:00", "08:00"]
-    DEFAULT_NUMBER = "+defaultnumber" # todo: Using this if there's no data for a shift
 
-    # Read config
+    # Read config to even more constants
     with open('config.json', 'r') as config_file:
         config_data = json.load(config_file)
     TESTING = config_data["TESTING"]
-    base_url = config_data["test_base_url" if TESTING else "real_base_url"]
-    login_payload = config_data["schedule_login_payload"]
+    DEFAULT_NUMBER = config_data["fallback_phone_number"]
+    BASE_URL = config_data["test_base_url" if TESTING else "real_base_url"]
+    LOGIN_PAYLOAD = config_data["schedule_login_payload"]
 
     # Get HTML of website
     html = get_html_of_month(
-        base_url=base_url,
+        base_url=BASE_URL,
         year=2019, 
         month=7, 
-        login_payload=login_payload,
+        login_payload=LOGIN_PAYLOAD,
         testing=TESTING)
 
     # Get day rows from html
