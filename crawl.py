@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
 from typing import List, Set, Dict, Tuple, Optional
 from dataclasses import dataclass
+from messageparser import get_interval_list_from_message
 
 
 @dataclass
@@ -150,11 +151,31 @@ def get_day_info(day_row) -> DayInfo:
         note=get_shift_info(tds[-1]))
 
 if __name__ == "__main__":
-    html = get_html_of_month("http://localhost:8081/", 2019, 7, testing=True)
+    # Constants
+    SHIFT_STARTS = ["08:00", "20:00"]
+    SHIFT_ENDS = ["20:00", "08:00"]
+    DEFAULT_NUMBER = "+defaultnumber" # todo: Using this if there's no data for a shift
 
+    # Read config
+    with open('config.json', 'r') as config_file:
+        config_data = json.load(config_file)
+    TESTING = config_data["TESTING"]
+    base_url = config_data["test_base_url" if TESTING else "real_base_url"]
+    login_payload = config_data["schedule_login_payload"]
+
+    # Get HTML of website
+    html = get_html_of_month(
+        base_url=base_url,
+        year=2019, 
+        month=7, 
+        login_payload=login_payload,
+        testing=TESTING)
+
+    # Get day rows from html
     month_view = get_month_view(html)
     day_rows = get_day_rows(month_view)
 
+    # Parse the day rows into DayInfos and print them with their shifts
     for i, day_row in enumerate(day_rows):
         try:
             day_info = get_day_info(day_row)
@@ -162,7 +183,15 @@ if __name__ == "__main__":
             for group_id, shifts in enumerate(day_info.groups):
                 print(f"  Group {group_id}")
                 for shift_id, shift in enumerate(shifts):
-                    print(f"    Shift {shift_id} {shift}")
+                    # print(f"    Shift {shift_id} {shift}")
+                    note = shift and shift.note or ""
+                    phone_number = shift and shift.phone_number or DEFAULT_NUMBER
+                    intervals = get_interval_list_from_message(
+                        SHIFT_STARTS[shift_id],
+                        SHIFT_ENDS[shift_id],
+                        phone_number,
+                        note)
+                    print(f"      {intervals}")
         except Exception as exception:
             print(i, "EXC", exception)
             raise
