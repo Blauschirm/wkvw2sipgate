@@ -38,6 +38,7 @@ def build_url_for_month(base_url: str, year: int, month: int):
     url = base_url + relative_date_url
     return url
 
+
 def get_html_of_month(base_url: str, year: int, month: int, login_payload=None, testing=False):
     url = build_url_for_month(base_url=base_url, year=year, month=month)
 
@@ -46,6 +47,7 @@ def get_html_of_month(base_url: str, year: int, month: int, login_payload=None, 
         raise Exception(f"Request to '{url}' failed (HTTP Status Code {r.status_code}): Text: {r.text}")
     
     return r.content
+
 
 def get_month_view(html_text: str):
     """
@@ -81,6 +83,7 @@ def get_day_rows(month_view):
     day_rows = list(map(lambda day: day.parent, all_days))
 
     return day_rows[1:] # skip header row
+
 
 def get_shifts_from_group(group):
     """
@@ -125,6 +128,7 @@ def get_shift_info(shift) -> Optional[ShiftInfo]:
 
     raise Exception(f"Found {len(spans)} spans in shift, expected 0 or 2", shift, spans)
 
+
 def get_day_info(day_row) -> DayInfo:
     """
     Parameters
@@ -149,6 +153,42 @@ def get_day_info(day_row) -> DayInfo:
     return DayInfo(day=tds[0].text.strip(),
         groups=list(groups),
         note=get_shift_info(tds[-1]))
+
+
+@dataclass
+class TimeSlot(object):
+    start_time: str
+    end_time: str
+    phone_number: str
+
+    def __str__(self):
+        return f"{self.start_time} - {self.phone_number} (ends {self.end_time})"
+
+def parse_day_info(
+    day_info: DayInfo,
+    group_id: int,
+    shift_starts: List[str],
+    shift_ends: List[str],
+    default_number: str) -> List[TimeSlot]:
+    """
+    Parses given day's group into a list of TimeSlots.
+
+    Parameters
+    ----------
+    shift_starts: List of times where the corresponding nth shift starts
+    shift_ends: List of times where the corresponding nth shift ends
+    default_number: If there is no number given
+    """
+    shifts = day_info.groups[group_id]
+
+    return [
+        TimeSlot(*interval) for shift_id, shift in enumerate(shifts) for interval in get_interval_list_from_message(
+            shift_starts[shift_id],
+            shift_ends[shift_id],
+            shift and shift.phone_number or DEFAULT_NUMBER,
+            shift and shift.note or "")
+    ]
+
 
 if __name__ == "__main__":
     # Constants
@@ -175,6 +215,16 @@ if __name__ == "__main__":
     month_view = get_month_view(html)
     day_rows = get_day_rows(month_view)
 
+
+    day_infos = list(map(lambda day_row: get_day_info(day_row), day_rows))
+
+    parsed_days = list(map(lambda day_info: [parse_day_info(day_info, group_id, SHIFT_STARTS, SHIFT_ENDS, DEFAULT_NUMBER) for group_id in range(len(day_info.groups))], day_infos))
+    for day_id, pday in enumerate(parsed_days):
+        for shift_id, shift_name in enumerate(["NFS1", "NFS2", "Leitung"]):
+            print(day_id + 1, shift_name)
+            for p in pday[shift_id]:
+                print("  ", str(p))
+    exit()
     # Parse the day rows into DayInfos and print them with their shifts
     for i, day_row in enumerate(day_rows):
         try:
@@ -182,16 +232,13 @@ if __name__ == "__main__":
             print(f"{i}. row: {day_info.day}, note: {day_info.note}")
             for group_id, shifts in enumerate(day_info.groups):
                 print(f"  Group {group_id}")
-                for shift_id, shift in enumerate(shifts):
-                    # print(f"    Shift {shift_id} {shift}")
-                    note = shift and shift.note or ""
-                    phone_number = shift and shift.phone_number or DEFAULT_NUMBER
-                    intervals = get_interval_list_from_message(
+                for start_time, phone_number in [
+                    [interval[0], interval[2]] for shift_id, shift in enumerate(shifts) for interval in get_interval_list_from_message(
                         SHIFT_STARTS[shift_id],
                         SHIFT_ENDS[shift_id],
-                        phone_number,
-                        note)
-                    print(f"      {intervals}")
+                        shift and shift.phone_number or DEFAULT_NUMBER,
+                        shift and shift.note or "")]:
+                    print("   ", start_time, phone_number)
         except Exception as exception:
             print(i, "EXC", exception)
             raise
