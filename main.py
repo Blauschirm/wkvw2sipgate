@@ -1,24 +1,31 @@
 import logging, json, time, os
 from logging import handlers
-from mailer import MailHandler
+from mailer import MailgunApi
 from io import StringIO
+from typing import List, Set, Dict, Tuple, Optional
 
-class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+class BufferingHandler(logging.handlers.BufferingHandler):
     def __init__(self, capacity):
         logging.handlers.BufferingHandler.__init__(self, capacity)
 
     def flush(self):
+        buffer = []
         if len(self.buffer) > 0:
             try:
-                print(self.buffer)
+                print("I am superflushed:", self.buffer)
             except:
                 self.handleError(None)  # no particular record
+            buffer = self.buffer
             self.buffer = []
-        return(self.buffer)
+        return(buffer)
 
 
-
-def setup_logging(log_folder_path: str, log_level: str, external_lib_log_level: str, rotate_logger_configuration: dict):
+def setup_logging(
+    log_folder_path: str, 
+    log_level: str, 
+    external_lib_log_level: str, 
+    rotate_logger_configuration: dict,
+    extra_handlers: List[logging.Handler] = []):
     """
     Sets up a console and a rotating file handler for logging.
 
@@ -52,7 +59,6 @@ def setup_logging(log_folder_path: str, log_level: str, external_lib_log_level: 
     file_handler.setFormatter(timestamp_formatter)
 
     # buffering logger for mail reports
-    buffer_handler = BufferingSMTPHandler(capacity=500)
     buffer_handler.setLevel(logging.WARNING)
     buffer_handler.setFormatter(formatter)
 
@@ -60,7 +66,7 @@ def setup_logging(log_folder_path: str, log_level: str, external_lib_log_level: 
     logging.basicConfig(
         level=LOG_LEVEL,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-        handlers=[console_handler, file_handler, buffer_handler])
+        handlers=[console_handler, file_handler, *extra_handlers])
         
     # Configure other libraries to only log WARNINGs
     logging.info("Setting logging for external libraries to {external_lib_log_level}")
@@ -78,8 +84,24 @@ if __name__ == "__main__":
     LOG_PATH = config_logging["log_path"] or "log"
     ROTATE_CONFIG = config_logging["rotate"] or { "when": 'D', "interval": 1, "backupCount": 10 }
     
-    setup_logging(log_folder_path=LOG_PATH, log_level=LOG_LEVEL, external_lib_log_level="WARNING", rotate_logger_configuration=ROTATE_CONFIG)
+    buffer_handler = BufferingHandler(capacity=500)
+    setup_logging(
+        log_folder_path=LOG_PATH, 
+        log_level=LOG_LEVEL,
+        external_lib_log_level="WARNING",
+        rotate_logger_configuration=ROTATE_CONFIG,
+        extra_handlers=[buffer_handler])
     
+    logger = logging.getLogger('Max')
+    logger.debug("Deb")
+    logger.info('inf')
+    logger.warning('warn')
+    logger.error('errrrr')
+    logger.fatal('fat!')
+    print("buffer returned: ", list(map(str, buffer_handler.flush())))
+
+
+    exit()
     import crawler
     crawler.run()
 
