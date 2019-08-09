@@ -1,11 +1,36 @@
-import requests, json, re, logging
+import requests, json, re
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
 from typing import List, Set, Dict, Tuple, Optional
+from dataclasses import dataclass
 
-logger = logging.getLogger('crawl')
-logging.basicConfig(level=logging.DEBUG)
+
+@dataclass
+class ShiftInfo:
+    """
+    Information about a single shift
+        - Who's shift it is
+        - His phone number
+        - A note about it
+    """
+    name: str
+    phone_number: str
+    note: Optional[str]
+
+
+@dataclass
+class DayInfo:
+    """
+    Information about an entire day:
+        - The description of the day (e.g. 1. Freitag)
+        - The groups and their shifts
+        - A note about it
+    """
+    day: str
+    groups: List[List[Optional[ShiftInfo]]]
+    note: Optional[ShiftInfo]
+
 
 def build_url_for_month(base_url: str, year: int, month: int):
     relative_date_url = f"{year}-{str(month).rjust(2, '0')}/"
@@ -14,8 +39,6 @@ def build_url_for_month(base_url: str, year: int, month: int):
 
 def get_html_of_month(base_url: str, year: int, month: int, login_payload=None, testing=False):
     url = build_url_for_month(base_url=base_url, year=year, month=month)
-
-    logger.debug(f"Connecting to shift-server at {url}")
 
     r = requests.post(url, login_payload) if not testing else requests.get(url)
     if not r.ok:
@@ -77,15 +100,6 @@ def get_shifts_from_group(group):
 
     return shifts
 
-# @dataclass
-class ShiftInfo:
-    def __init__(self, name: str, phone_number: str, note: str = None):
-        self.name = name
-        self.phone_number = phone_number
-        self.note = note
-    
-    def __repr__(self):
-        return f"""ShiftInfo("{self.name}", "{self.phone_number}", "{self.note}")"""
 
 def get_shift_info(shift) -> Optional[ShiftInfo]:
     """
@@ -109,16 +123,6 @@ def get_shift_info(shift) -> Optional[ShiftInfo]:
             note=note)
 
     raise Exception(f"Found {len(spans)} spans in shift, expected 0 or 2", shift, spans)
-
-class DayInfo:
-    def __init__(self, day: str, groups: List[List[Optional[ShiftInfo]]], note: ShiftInfo = None):
-        self.day = day
-        self.groups = groups
-        self.note = note
-    
-    def __repr__(self):
-        return f"""DayInfo("{self.day}", "{self.groups}", "{self.note}")"""
-
 
 def get_day_info(day_row) -> DayInfo:
     """
@@ -161,5 +165,6 @@ if __name__ == "__main__":
                     print(f"    Shift {shift_id} {shift}")
         except Exception as exception:
             print(i, "EXC", exception)
+            raise
 
     

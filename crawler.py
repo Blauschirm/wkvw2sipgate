@@ -47,6 +47,8 @@ def fetch_shift_schedule_entries(base_url, login_payload, is_first_shift, target
     ```
     """
 
+    global TESTING
+
     # Da der Testserver kein Login fordert (und kein POST versteht), 
     # reicht hier ein einfacher GET, für production wird die login_payload gebraucht
 
@@ -167,30 +169,34 @@ def make_redirects(sipgate_base_url, sipgate_headers, number_map, redirects, dry
             errors = errors + 1
 
 
-def fetch_and_apply_redirects(base_url: str, login_payload: str, dryrun: bool, nextday: bool = False):
+def fetch_and_apply_redirects(schedule_base_url: str, schedule_login_payload: str, numbermap: dict, sipgate_base_url: str, sipgate_headers: str, dryrun: bool, nextday: bool = False):
+    
     target_daytime_object = determine_target_date(nextday)
 
     is_first_shift = (8 <= target_daytime_object.hour < 20)
     # is_second_shift = not is_first_shift
 
-    redirects = fetch_shift_schedule_entries(base_url, login_payload, is_first_shift, target_daytime_object)
+    redirects = fetch_shift_schedule_entries(schedule_base_url, schedule_login_payload, is_first_shift, target_daytime_object)
     logger.info(f"Redirects: {redirects}")
 
-    make_redirects(SIPGATE_BASE_URL, SIPGATE_HEADERS, NUMBER_MAP, redirects, dryrun)
+    make_redirects(sipgate_base_url, sipgate_headers, numbermap, redirects, dryrun)
 
     if errors or warnings:
         logger.warning(f"Finished with {errors} error(s) and {warnings} warning(s).")
     else:
         logger.info("Success. Finished without errors or warnings")
+    
+    return errors == 0
 
-
-if __name__ == "main":
+def run():
     with open('config.json', 'r') as config_file:
         config_data = json.load(config_file)
 
+    global TESTING
     TESTING = config_data["TESTING"]
-    base_url = config_data["test_base_url" if TESTING else "real_base_url"]
-    login_payload = config_data["schedule_login_payload"]
+
+    schedule_base_url = config_data["test_base_url" if TESTING else "real_base_url"]
+    schedule_login_payload = config_data["schedule_login_payload"]
     NUMBER_MAP = config_data["NUMBER_MAP"]
     SIPGATE_BASE_URL = config_data["sipgate"]["base_url"]
     SIPGATE_HEADERS = {'Authorization': 'Basic ' + config_data["sipgate"]["pass_base64"],
@@ -202,5 +208,24 @@ if __name__ == "main":
     errors = 0
     warnings = 0
 
-    fetch_and_apply_redirects(base_url, login_payload, dryrun, nextday=False)
-    fetch_and_apply_redirects(base_url, login_payload, dryrun, nextday=True)
+    success = fetch_and_apply_redirects(schedule_base_url,
+                                        schedule_login_payload,
+                                        NUMBER_MAP,
+                                        SIPGATE_BASE_URL,
+                                        SIPGATE_HEADERS,
+                                        dryrun,
+                                        nextday=False)
+
+    errors = 0
+    warnings = 0
+
+    success = fetch_and_apply_redirects(schedule_base_url,
+                                        schedule_login_payload,
+                                        NUMBER_MAP,
+                                        SIPGATE_BASE_URL,
+                                        SIPGATE_HEADERS,
+                                        dryrun,
+                                        nextday=True)
+
+if __name__ == "main":
+    run()
