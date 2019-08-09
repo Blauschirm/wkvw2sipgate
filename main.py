@@ -1,6 +1,22 @@
-import logging, json, time
+import logging, json, time, os
 from logging import handlers
-import os
+from mailer import MailHandler
+from io import StringIO
+
+class BufferingSMTPHandler(logging.handlers.BufferingHandler):
+    def __init__(self, capacity):
+        logging.handlers.BufferingHandler.__init__(self, capacity)
+
+    def flush(self):
+        if len(self.buffer) > 0:
+            try:
+                print(self.buffer)
+            except:
+                self.handleError(None)  # no particular record
+            self.buffer = []
+        return(self.buffer)
+
+
 
 def setup_logging(log_folder_path: str, log_level: str, external_lib_log_level: str, rotate_logger_configuration: dict):
     """
@@ -35,11 +51,16 @@ def setup_logging(log_folder_path: str, log_level: str, external_lib_log_level: 
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(timestamp_formatter)
 
+    # buffering logger for mail reports
+    buffer_handler = BufferingSMTPHandler(capacity=500)
+    buffer_handler.setLevel(logging.WARNING)
+    buffer_handler.setFormatter(formatter)
+
     # configure logging
     logging.basicConfig(
         level=LOG_LEVEL,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-        handlers=[console_handler, file_handler])
+        handlers=[console_handler, file_handler, buffer_handler])
         
     # Configure other libraries to only log WARNINGs
     logging.info("Setting logging for external libraries to {external_lib_log_level}")
@@ -60,6 +81,10 @@ if __name__ == "__main__":
     setup_logging(log_folder_path=LOG_PATH, log_level=LOG_LEVEL, external_lib_log_level="WARNING", rotate_logger_configuration=ROTATE_CONFIG)
     
     import crawler
+    crawler.run()
+
+    print("%"*50)
+    logging.getLogger().handlers[2].flush()
 
 
 
