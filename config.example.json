@@ -13,6 +13,7 @@
         "pass_base64" : "[base64 encoded username and password]",
         "dryrun" : false
     },
+    "fallback_phone_number": "[Number to default to if a there's nothing entered in the shift]",
     "NUMBER_MAP" : {
         "NFS1": "[Public phone number 1]", 
         "NFS2": "[Public phone number 2]",

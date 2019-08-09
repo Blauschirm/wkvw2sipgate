@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from sipgate_api import SipgateManager
 from typing import List, Set, Dict, Tuple, Optional
 from dataclasses import dataclass
+from messageparser import get_interval_list_from_message
 
 
 @dataclass
@@ -37,6 +38,7 @@ def build_url_for_month(base_url: str, year: int, month: int):
     url = base_url + relative_date_url
     return url
 
+
 def get_html_of_month(base_url: str, year: int, month: int, login_payload=None, testing=False):
     url = build_url_for_month(base_url=base_url, year=year, month=month)
 
@@ -45,6 +47,7 @@ def get_html_of_month(base_url: str, year: int, month: int, login_payload=None, 
         raise Exception(f"Request to '{url}' failed (HTTP Status Code {r.status_code}): Text: {r.text}")
     
     return r.content
+
 
 def get_month_view(html_text: str):
     """
@@ -80,6 +83,7 @@ def get_day_rows(month_view):
     day_rows = list(map(lambda day: day.parent, all_days))
 
     return day_rows[1:] # skip header row
+
 
 def get_shifts_from_group(group):
     """
@@ -124,6 +128,7 @@ def get_shift_info(shift) -> Optional[ShiftInfo]:
 
     raise Exception(f"Found {len(spans)} spans in shift, expected 0 or 2", shift, spans)
 
+
 def get_day_info(day_row) -> DayInfo:
     """
     Parameters
@@ -149,20 +154,95 @@ def get_day_info(day_row) -> DayInfo:
         groups=list(groups),
         note=get_shift_info(tds[-1]))
 
-if __name__ == "__main__":
-    html = get_html_of_month("http://localhost:8081/", 2019, 7, testing=True)
 
+@dataclass
+class TimeSlot(object):
+    start_time: str
+    end_time: str
+    phone_number: str
+
+    def __str__(self):
+        return f"{self.start_time} - {self.phone_number} (ends {self.end_time})"
+
+def parse_day_info(
+    day_info: DayInfo,
+    group_id: int,
+    shift_starts: List[str],
+    shift_ends: List[str],
+    default_number: str) -> List[TimeSlot]:
+    """
+    Parses given day's group into a list of TimeSlots.
+
+    Parameters
+    ----------
+    shift_starts: List of times where the corresponding nth shift starts
+    shift_ends: List of times where the corresponding nth shift ends
+    default_number: If there is no number given
+    """
+    shifts = day_info.groups[group_id]
+
+    return [
+        TimeSlot(*interval) for shift_id, shift in enumerate(shifts) for interval in get_interval_list_from_message(
+            shift_starts[shift_id],
+            shift_ends[shift_id],
+            shift and shift.phone_number or DEFAULT_NUMBER,
+            shift and shift.note or "")
+    ]
+
+
+if __name__ == "__main__":
+    # Constants
+    SHIFT_STARTS = ["08:00", "20:00"]
+    SHIFT_ENDS = ["20:00", "08:00"]
+
+    # Read config to even more constants
+    with open('config.json', 'r') as config_file:
+        config_data = json.load(config_file)
+    TESTING = config_data["TESTING"]
+    DEFAULT_NUMBER = config_data["fallback_phone_number"]
+    BASE_URL = config_data["test_base_url" if TESTING else "real_base_url"]
+    LOGIN_PAYLOAD = config_data["schedule_login_payload"]
+
+    # Get HTML of website
+    html = get_html_of_month(
+        base_url=BASE_URL,
+        year=2019, 
+        month=5, 
+        login_payload=LOGIN_PAYLOAD,
+        testing=TESTING)
+
+    # Get day rows from html
     month_view = get_month_view(html)
     day_rows = get_day_rows(month_view)
 
+
+    day_infos = list(map(lambda day_row: get_day_info(day_row), day_rows))
+
+    parsed_days = list(map(lambda day_info: [parse_day_info(day_info, group_id, SHIFT_STARTS, SHIFT_ENDS, DEFAULT_NUMBER) for group_id in range(len(day_info.groups))], day_infos))
+    
+    # exit()
+    # for day_id, pday in enumerate(parsed_days):
+    day_id = 4
+    pday = parsed_days[day_id]
+    for shift_id, shift_name in enumerate(["NFS1", "NFS2", "Leitung"]):
+        print(day_id + 1, shift_name)
+        for p in pday[shift_id]:
+            print("  ", str(p))
+    exit()
+    # Parse the day rows into DayInfos and print them with their shifts
     for i, day_row in enumerate(day_rows):
         try:
             day_info = get_day_info(day_row)
             print(f"{i}. row: {day_info.day}, note: {day_info.note}")
             for group_id, shifts in enumerate(day_info.groups):
                 print(f"  Group {group_id}")
-                for shift_id, shift in enumerate(shifts):
-                    print(f"    Shift {shift_id} {shift}")
+                for start_time, phone_number in [
+                    [interval[0], interval[2]] for shift_id, shift in enumerate(shifts) for interval in get_interval_list_from_message(
+                        SHIFT_STARTS[shift_id],
+                        SHIFT_ENDS[shift_id],
+                        shift and shift.phone_number or DEFAULT_NUMBER,
+                        shift and shift.note or "")]:
+                    print("   ", start_time, phone_number)
         except Exception as exception:
             print(i, "EXC", exception)
             raise
