@@ -1,7 +1,10 @@
 import json, requests, logging
 from datetime import datetime
 
-class MailHandler(object):
+class MailgunApi(object):
+    """
+    Allows to send emails via the mailgun API.
+    """
 
     def __init__(self, mailgun_domain, mailgun_key):
         self.mailgun_domain = mailgun_domain
@@ -14,9 +17,11 @@ class MailHandler(object):
             f"https://api.eu.mailgun.net/v3/{mailgun_domain}/messages",
             auth=("api", mailgun_key),
             data={"from": f"Notfallseelsorge Schichtplan Sipgate Adapter <schichtsystem@{mailgun_domain}>",
-                "to": recipients,
+                "to": f"schichtsystem@{mailgun_domain}",
+                "bcc": recipients,
                 "subject": subject,
                 "text": text})
+
 
     def send_confirmation_mail(self, recipients, text):
         time_string = datetime.strftime(datetime.now(), "%H:%M %d.%m.%y")
@@ -31,7 +36,7 @@ if __name__ == "__main__":
     mailgun_key = config_data["mailgun"]["api_key"]
     recipients = config_data["mailgun"]["recipients"]
 
-    mail_handler = MailHandler(mailgun_domain, mailgun_key)
+    mail_handler = MailgunApi(mailgun_domain, mailgun_key)
 
     text = "Die Telefonummern wurden erfolgreich umgestellt."
     print(mail_handler.send_confirmation_mail(recipients, text).content)
