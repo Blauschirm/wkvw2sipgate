@@ -207,7 +207,7 @@ if __name__ == "__main__":
     html = get_html_of_month(
         base_url=BASE_URL,
         year=2019, 
-        month=7, 
+        month=5, 
         login_payload=LOGIN_PAYLOAD,
         testing=TESTING)
 
@@ -219,11 +219,15 @@ if __name__ == "__main__":
     day_infos = list(map(lambda day_row: get_day_info(day_row), day_rows))
 
     parsed_days = list(map(lambda day_info: [parse_day_info(day_info, group_id, SHIFT_STARTS, SHIFT_ENDS, DEFAULT_NUMBER) for group_id in range(len(day_info.groups))], day_infos))
-    for day_id, pday in enumerate(parsed_days):
-        for shift_id, shift_name in enumerate(["NFS1", "NFS2", "Leitung"]):
-            print(day_id + 1, shift_name)
-            for p in pday[shift_id]:
-                print("  ", str(p))
+    
+    # exit()
+    # for day_id, pday in enumerate(parsed_days):
+    day_id = 4
+    pday = parsed_days[day_id]
+    for shift_id, shift_name in enumerate(["NFS1", "NFS2", "Leitung"]):
+        print(day_id + 1, shift_name)
+        for p in pday[shift_id]:
+            print("  ", str(p))
     exit()
     # Parse the day rows into DayInfos and print them with their shifts
     for i, day_row in enumerate(day_rows):
