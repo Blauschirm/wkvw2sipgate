@@ -104,7 +104,7 @@ def time_rules_to_interval_list(rules: List[TimeRule], default_number: str, shif
     stack: List[TimeRule] = [TimeRule("", FromOrTill.FROM, default_number, None)]
     for rule in rules:
         if rule.from_or_till == FromOrTill.FROM:
-            stack.insert(0, rule)
+            stack.insert(0, rule) # the top of the stack is at 0, this is needes because the remove function scans an array from left to right.
         else: # TILL
             if rule in stack:
                 stack.remove(rule) # remove previously added FROM with same phone_number & pair_id
@@ -131,8 +131,8 @@ def get_interval_list_from_message(shift_start: str, shift_end: str, default_num
     # Mehrere Uhrzeitbereiche für die selbe Vertretung können mit Komma und "und" aneinander gereiht werden.
     # Beispiel: "bis 10:00 Uhr +491234; bis 12:20, 13:00-14:20 und ab 17:00 Uhr +494321"
     #
-    # timeslots |           |          |          |              |             | 
-    # segment   |                     |                                         |
+    # timeslots |                     |          |              |                      | 
+    # segment   |                     |                                                |
 
     Parameters:
     shift_start (string): regular beginning of shift
