@@ -189,6 +189,37 @@ def parse_day_info(
             shift and shift.note or "")
     ]
 
+def get_month():
+    # Constants
+    SHIFT_STARTS = ["08:00", "20:00"]
+    SHIFT_ENDS = ["20:00", "08:00"]
+
+    # Read config to even more constants
+    with open('config.json', 'r') as config_file:
+        config_data = json.load(config_file)
+    TESTING = config_data["TESTING"]
+    DEFAULT_NUMBER = config_data["fallback_phone_number"]
+    BASE_URL = config_data["test_base_url" if TESTING else "real_base_url"]
+    LOGIN_PAYLOAD = config_data["schedule_login_payload"]
+
+    # Get HTML of website
+    html = get_html_of_month(
+        base_url=BASE_URL,
+        year=2019, 
+        month=5, 
+        login_payload=LOGIN_PAYLOAD,
+        testing=TESTING)
+
+    # Get day rows from html
+    month_view = get_month_view(html)
+    day_rows = get_day_rows(month_view)
+
+
+    day_infos = list(map(lambda day_row: get_day_info(day_row), day_rows))
+
+    parsed_days = list(map(lambda day_info: [parse_day_info(day_info, group_id, SHIFT_STARTS, SHIFT_ENDS, DEFAULT_NUMBER) for group_id in range(len(day_info.groups))], day_infos))
+    
+    return parsed_day
 
 if __name__ == "__main__":
     # Constants
