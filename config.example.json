@@ -33,5 +33,8 @@
         "api_key": "[mailgun api key]",
         "domain": "[email domain]",
         "recipients": "[array of all recipient adresses]"
+    },
+    "telegram": {
+        "token": "[Telegram bot token]"
     }
 }

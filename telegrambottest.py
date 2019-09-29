@@ -1,0 +1,103 @@
+from telegram.ext import Updater, CommandHandler, Filters, CallbackContext, MessageHandler
+from telegram import Update
+import logging, json
+from threading import Thread, Event
+from crawl import get_month
+
+class IntervalThread(Thread):
+    def __init__(self, timeout, callback):
+        Thread.__init__(self)
+        self.__stop_event = Event()
+        self.callback = callback
+        self.timeout = timeout
+
+    def stop(self):
+        self.__stop_event.set()
+
+    def run(self):
+        while not self.__stop_event.wait(self.timeout):
+            print("Timer")
+            self.callback()
+
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+registered_chat_ids = [-1001463054189, 37081412, 119489385] # todo save / load from disk
+
+def start(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.message.chat_id, text=f"Oh, hello #{update.message.chat_id}")
+    if not update.message.chat_id in registered_chat_ids:
+        registered_chat_ids.append(update.message.chat_id)
+
+def stop(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.message.chat_id, text=f"Bye #{update.message.chat_id}")
+    registered_chat_ids.remove(update.message.chat_id)
+
+def hello(update: Update, context: CallbackContext):
+    # Stuff here
+    # args will be available as context.args
+    # jobqueue will be available as context.jobqueue
+    update.message.reply_text(f'Hello {update.message.from_user.first_name}')
+
+def echo(update: Update, context: CallbackContext):
+    # Stuff here
+    # args will be available as context.args
+    # jobqueue will be available as context.jobqueue
+    update.message.reply_text(f'{update.message.text}')
+
+def help(update: Update, context: CallbackContext):
+    update.message.reply_text("Hier kommen wir und retten dir! \nHier sind alle verfügbaren Befehle: \nbamboozled! Ich kann noch nichts.")
+
+def status(update: Update, context: CallbackContext):
+    global TESTING
+    update.message.reply_text(f"Der Bot läuft (yay!) {'im Testmodus' if TESTING else 'normal'}. Registered chats: {registered_chat_ids}")
+
+def message_everybody():
+    global updater
+    print("MESSAGING EVERYBODY!")
+    for id in registered_chat_ids:
+        try:
+            updater.bot.send_message(chat_id=id, text="1 piep piep piep, ich hab euch alle lieb!")
+        except Exception as err:
+            print("Des hat ned 'klappt", err)
+
+def return_day(update: Update, context: CallbackContext):
+    day_id = int(context.args[0], 10) - 1
+    day_data = get_month()[day_id]
+    reply_text = f"Fuer den {day_id + 1}.:\n"
+    for shift_id, shift_name in enumerate(["NSF1", "NSFW2", "Dude?"]):
+        reply_text += f"**Gruppe {shift_name}**\n"
+        reply_text += day_data[shift_id]+"\n"
+    update.message.reply_text(reply_text)
+
+def unknown_command(update: Update, context: CallbackContext):
+    context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I didn't understand that command.")
+    update.message.reply_text("Command unknown. Type /help to see the list of available commands.")
+
+# Read config
+with open('config.json', 'r') as config_file:
+    config_data = json.load(config_file)
+TESTING = config_data["TESTING"]
+token = config_data["telegram"]["token"]
+
+updater = Updater(token, use_context=True) # todo load bot ID from disk
+
+updater.dispatcher.add_handler(CommandHandler('start', start))
+updater.dispatcher.add_handler(CommandHandler('stop', stop))
+updater.dispatcher.add_handler(CommandHandler('hello', hello))
+updater.dispatcher.add_handler(CommandHandler('echo', echo))
+updater.dispatcher.add_handler(CommandHandler('help', help))
+updater.dispatcher.add_handler(CommandHandler('status', status))
+updater.dispatcher.add_handler(CommandHandler('day', return_day))
+updater.dispatcher.add_handler(MessageHandler(Filters._Command(), unknown_command))
+
+t = IntervalThread(60, message_everybody)
+t.start()
+
+try:
+    updater.start_polling()
+    updater.idle()
+finally:
+    print("Forbei Ende Ous!")
+    t.stop()
