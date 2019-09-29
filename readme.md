@@ -92,3 +92,18 @@ Rufnummer -> Anschluss -> Gerät -> Nummer
 |-----------------|------------------|---   |--|
 |Anschluss        | activePhonelines | `p0` | `GET /{userid}/phonelines` | 
 |                 | numbers          |      | `GET /numbers` `GET /{userId}/numbers`|
+
+# Was die wollen
+
+Use Cases
+|Priorität|Done Y/N| Als | Möchte ich | Um |
+|---------|----|-----|------------|----|
+|Must have|N| Diensthabender | dass eine Rufumleitung auf meine Nummer nach Dienstplan geschieht | mich um die Anrufenden zu kümmern |
+|Must have|N| Chef | abends um 20 Uhr die Übersicht über den nächsten Tag bekommen | einzugreifen falls etwas falsch ist |
+|Must have|N| Chef & Devs | Fehlermeldungen direkt per Mail oder SMS bekommen | einzugreifen falls etwas falsch ist |
+|Nice to have|N| Chef | das Programm temporär abstellen | fehlverhalten zu vermeiden |
+|Nice to have|N| Diensthabender | eine SMS&/Mail kurz vor Schichtbeginn erhalten | vorbereitet zu sein |
+|Nice to have|N| Mitarbeiter | dass Änderungen am Dienstplan innerhalb von 5min übernommen werden | zeitnah Änderungen umsetzbar zu machen |
+|Extra|In progress :P|Telegram Bot!!!!!|||
+
+Mitteilungen könnten auch über Telegram versendet werden und Befehle wie stop/start erhalten werden.
