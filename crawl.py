@@ -185,11 +185,11 @@ def parse_day_info(
         TimeSlot(*interval) for shift_id, shift in enumerate(shifts) for interval in get_interval_list_from_message(
             shift_starts[shift_id],
             shift_ends[shift_id],
-            shift and shift.phone_number or DEFAULT_NUMBER,
+            shift and shift.phone_number or default_number,
             shift and shift.note or "")
     ]
 
-def get_month():
+def get_month() -> List[List[TimeSlot]]:
     # Constants
     SHIFT_STARTS = ["08:00", "20:00"]
     SHIFT_ENDS = ["20:00", "08:00"]
@@ -219,7 +219,7 @@ def get_month():
 
     parsed_days = list(map(lambda day_info: [parse_day_info(day_info, group_id, SHIFT_STARTS, SHIFT_ENDS, DEFAULT_NUMBER) for group_id in range(len(day_info.groups))], day_infos))
     
-    return parsed_day
+    return parsed_days
 
 if __name__ == "__main__":
     # Constants
