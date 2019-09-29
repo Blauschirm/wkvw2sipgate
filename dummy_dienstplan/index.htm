@@ -5,7 +5,8 @@
         <script type="text/javascript">
             const date = new Date();
             const month = date.getUTCMonth() + 1;
-            const dateString = `./${date.getFullYear()}-${ (month < 10 ? '0' : '') + month}`
+            // const dateString = `./${date.getFullYear()}-${ (month < 10 ? '0' : '') + month}`
+            const dateString = '2019-07';
             console.log(`Forwarding to ${dateString}`);
             window.location.replace(dateString);
         </script>
