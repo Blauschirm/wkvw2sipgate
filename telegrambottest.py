@@ -101,7 +101,7 @@ updater.dispatcher.add_handler(CommandHandler('day', return_day))
 updater.dispatcher.add_handler(MessageHandler(Filters._Command(), unknown_command))
 
 t = IntervalThread(60, lambda: message_everybody(updater.bot))
-t.start()
+# t.start()
 
 try:
     updater.start_polling()
