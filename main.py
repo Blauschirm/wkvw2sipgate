@@ -77,11 +77,12 @@ def init_logger():
         external_lib_log_level="WARNING",
         rotate_logger_configuration=ROTATE_CONFIG,
         extra_handlers=[buffer_handler])
+    return buffer_handler
 
 
 if __name__ == "__main__":
     
-    init_logger()
+    buffer_handler = init_logger()
     logger = logging.getLogger('Max')
     logger.debug("Deb")
     logger.info('inf')
@@ -98,8 +99,3 @@ if __name__ == "__main__":
     print("%"*50)
     logging.getLogger().handlers[2].flush()
 
-
-    setup_logging(log_folder_path=LOG_PATH, log_level=LOG_LEVEL, external_lib_log_level="WARNING",
-                  rotate_logger_configuration=ROTATE_CONFIG)
-
-    import crawler
