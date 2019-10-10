@@ -70,11 +70,11 @@ def status(update: Update, context: CallbackContext):
     global TESTING
     update.message.reply_text(f"Der Bot läuft (yay!) {'im Testmodus' if TESTING else 'normal'}. Registered chats: {registered_chat_ids}")
 
-def message_everybody(bot: Bot):
+def message_everybody(bot: Bot, text="piep piep piep, ich hab euch alle lieb!"):
     print("MESSAGING EVERYBODY!")
     for id in registered_chat_ids:
         try:
-            bot.send_message(chat_id=id, text="1 piep piep piep, ich hab euch alle lieb!")
+            bot.send_message(chat_id=id, text=text)
         except Exception as err:
             print("Des hat ned 'klappt", err)
 
@@ -152,8 +152,10 @@ t = IntervalThread(60, lambda: message_everybody(updater.bot))
 # t.start()
 
 try:
+    message_everybody(updater.bot, text="Ich bin jetzt online! Hallo")
     updater.start_polling()
     updater.idle()
 finally:
     print("Forbei Ende Ous!")
+    message_everybody(updater.bot, text="Ich fahre runter, bis bald!")
     t.stop()
