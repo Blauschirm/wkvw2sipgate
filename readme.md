@@ -54,6 +54,13 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 # Configuration: `config.json`
 [config.example.json](./config.example.json) nach `config.json` kopieren und Werte in `[eckigen Klammern]` ersetzen.
 
+
+# Telegrambot
+- KakaduBot bei Telegram
+- Erlaubt Steuerung und Überwachung des Skripts
+- /start um alle Updates zu abonnieren
+- /help für Liste aller Befehle
+
 # Ideen wie das ganze Funktionieren könnte
 - Läuft jede volle Stunde - eher alle 5 minuten
 - Lädt sich alle Daten für den aktuellen und den letzten Monat herunter
