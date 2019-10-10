@@ -54,6 +54,9 @@ Die Umleitung ist normalerweise für die gesamte Schicht gültig, es gibt aber m
 # Configuration: `config.json`
 [config.example.json](./config.example.json) nach `config.json` kopieren und Werte in `[eckigen Klammern]` ersetzen.
 
+# Configuration `jokes.json`
+JSON muss folgendes Format haben: `[{'text': "<Witz1>", 'fresh': true}, {'text': "<Witz2>", 'fresh': true}]`
+
 
 # Telegrambot
 - KakaduBot bei Telegram

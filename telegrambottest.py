@@ -96,19 +96,18 @@ def return_day(update: Update, context: CallbackContext):
 
 def joke(update: Update, context: CallbackContext):
     jokes_mng = JsonManager("jokes.json")
-    fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data["church_jokes"]) if joke['fresh']==True]
+    fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data) if joke['fresh']==True]
     
     if len(fresh_jokes) == 0:
-        for joke in jokes_mng.data["church_jokes"]:
+        for joke in jokes_mng.data:
             joke['fresh'] = True
-        fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data["church_jokes"])]
+        fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data)]
 
     joke_id, joke = random_choice(fresh_jokes)
     joke_text = joke['text']
     print(joke_text)
-    jokes_mng.data["church_jokes"][joke_id]['fresh'] = False
+    jokes_mng.data[joke_id]['fresh'] = False
     jokes_mng.save_to_disk()
-
 
     update.message.reply_text(joke_text)
 
