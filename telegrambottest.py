@@ -5,7 +5,9 @@ from threading import Thread, Event
 from crawl import get_month, TimeSlot
 from typing import List, Set, Dict, Tuple, Optional
 from math import ceil, floor
+from random import choice as random_choice
 
+from json_manager import JsonManager
 from main import init_logger
 
 
@@ -35,9 +37,12 @@ registered_chat_ids = [-1001463054189, 37081412, 119489385] # todo save / load f
 command_descriptions = {}
 
 def start(update: Update, context: CallbackContext):
-    context.bot.send_message(chat_id=update.message.chat_id, text=f"Oh, hello #{update.message.chat_id}")
     if not update.message.chat_id in registered_chat_ids:
         registered_chat_ids.append(update.message.chat_id)
+        context.bot.send_message(chat_id=update.message.chat_id, text=f"Oh, hallo #{update.message.chat_id}. Du erhälst jetzt alle Updates.")
+    else:
+        context.bot.send_message(chat_id=update.message.chat_id, text=f"Oh, hallo #{update.message.chat_id}. Du bist schon abonniert. Versuche /stop wenn du das nicht mehr sein willst.")
+        
 
 def stop(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.message.chat_id, text=f"Bye #{update.message.chat_id}")
@@ -89,6 +94,25 @@ def return_day(update: Update, context: CallbackContext):
         reply_text += "```\n"
     update.message.reply_markdown(reply_text)
 
+def joke(update: Update, context: CallbackContext):
+    jokes_mng = JsonManager("jokes.json")
+    fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data["church_jokes"]) if joke['fresh']==True]
+    
+    if len(fresh_jokes) == 0:
+        for joke in jokes_mng.data["church_jokes"]:
+            joke['fresh'] = True
+        fresh_jokes = [(id, joke) for id, joke in enumerate(jokes_mng.data["church_jokes"])]
+
+    joke_id, joke = random_choice(fresh_jokes)
+    joke_text = joke['text']
+    print(joke_text)
+    jokes_mng.data["church_jokes"][joke_id]['fresh'] = False
+    jokes_mng.save_to_disk()
+
+
+    update.message.reply_text(joke_text)
+
+
 def unknown_command(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I didn't understand that command.")
     update.message.reply_text("Command unknown. Type /help to see the list of available commands.")
@@ -105,6 +129,7 @@ command_descriptions.update({
     '/status' : "Zeigt den Status des Bots und Skriptes",
     '/day XX': "Zeigt die Umleitungen für den XXten Tag des Monats. Ohne Zahl, die von heute",
     '/help' : "Diese Hilfe, duuh",
+    '/joke' : "Erzählt einen (schlechten) Witz",
     '/hello' : "Huhu",
     '/echo' : "ECHO, Echo, echo..."
     })
@@ -118,6 +143,7 @@ updater.dispatcher.add_handler(CommandHandler('echo', echo))
 updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_handler(CommandHandler('status', status))
 updater.dispatcher.add_handler(CommandHandler('day', return_day))
+updater.dispatcher.add_handler(CommandHandler('joke', joke))
 updater.dispatcher.add_handler(MessageHandler(Filters._Command(), unknown_command))
 
 if len(updater.dispatcher.handlers[0]) - 1 != len(command_descriptions):
