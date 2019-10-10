@@ -105,7 +105,6 @@ def joke(update: Update, context: CallbackContext):
 
     joke_id, joke = random_choice(fresh_jokes)
     joke_text = joke['text']
-    print(joke_text)
     jokes_mng.data[joke_id]['fresh'] = False
     jokes_mng.save_to_disk()
 
