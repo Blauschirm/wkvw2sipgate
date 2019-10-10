@@ -6,6 +6,9 @@ from crawl import get_month, TimeSlot
 from typing import List, Set, Dict, Tuple, Optional
 from math import ceil, floor
 
+from main import init_logger
+
+
 class IntervalThread(Thread):
     def __init__(self, timeout, callback):
         Thread.__init__(self)
@@ -22,10 +25,14 @@ class IntervalThread(Thread):
             self.callback()
 
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+init_logger()
+logger = logging.getLogger('telegrambot')
 
 registered_chat_ids = [-1001463054189, 37081412, 119489385] # todo save / load from disk
+
+command_descriptions = {}
 
 def start(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.message.chat_id, text=f"Oh, hello #{update.message.chat_id}")
@@ -46,10 +53,13 @@ def echo(update: Update, context: CallbackContext):
     # Stuff here
     # args will be available as context.args
     # jobqueue will be available as context.jobqueue
-    update.message.reply_text(f'{update.message.text}')
+    update.message.reply_text(f'{update.message.text[5:]}')
 
 def help(update: Update, context: CallbackContext):
-    update.message.reply_text("Hier kommen wir und retten dir! \nHier sind alle verfügbaren Befehle: \nbamboozled! Ich kann noch nichts.")
+    global command_descriptions
+    reply_text = "Hier sind alle verfügbaren Befehle:\n\n"
+    reply_text += ''.join([str(key) + ":\n" + str(value) + "\n\n" for key, value in command_descriptions.items()])
+    update.message.reply_text(reply_text)
 
 def status(update: Update, context: CallbackContext):
     global TESTING
@@ -89,6 +99,16 @@ with open('config.json', 'r') as config_file:
 TESTING = config_data["TESTING"]
 token = config_data["telegram"]["token"]
 
+command_descriptions.update({
+    '/start' : "Startet den Bot und abonniert alle Updates.",
+    '/stop' : "Deabonniert dich von allen Updates.",
+    '/status' : "Zeigt den Status des Bots und Skriptes",
+    '/day XX': "Zeigt die Umleitungen für den XXten Tag des Monats. Ohne Zahl, die von heute",
+    '/help' : "Diese Hilfe, duuh",
+    '/hello' : "Huhu",
+    '/echo' : "ECHO, Echo, echo..."
+    })
+
 updater = Updater(token, use_context=True) # todo load bot ID from disk
 
 updater.dispatcher.add_handler(CommandHandler('start', start))
@@ -99,6 +119,10 @@ updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_handler(CommandHandler('status', status))
 updater.dispatcher.add_handler(CommandHandler('day', return_day))
 updater.dispatcher.add_handler(MessageHandler(Filters._Command(), unknown_command))
+
+if len(updater.dispatcher.handlers[0]) - 1 != len(command_descriptions):
+    # check if all commands are explained, the unknown command handler doesn't need explantion it is not callable
+    logger.warning("Error with Command descriptions. Check if all commands are explained")
 
 t = IntervalThread(60, lambda: message_everybody(updater.bot))
 # t.start()

@@ -29,7 +29,7 @@ def setup_logging(
 
     # console logger
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(LOG_LEVEL)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
 
     # file logger
@@ -43,12 +43,13 @@ def setup_logging(
     file_handler.setFormatter(timestamp_formatter)
 
     # buffering logger for mail reports
+    buffer_handler = extra_handlers[0]
     buffer_handler.setLevel(logging.WARNING)
     buffer_handler.setFormatter(formatter)
 
     # configure logging
     logging.basicConfig(
-        level=LOG_LEVEL,
+        level=log_level,
         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
         handlers=[console_handler, file_handler, *extra_handlers])
         
@@ -56,9 +57,10 @@ def setup_logging(
     logging.info("Setting logging for external libraries to {external_lib_log_level}")
     logging.getLogger("requests").setLevel(external_lib_log_level)
     logging.getLogger("urllib3").setLevel(external_lib_log_level)
+    logging.getLogger("telegram").setLevel(external_lib_log_level)
 
 
-if __name__ == "__main__":
+def init_logger():
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
 
@@ -75,7 +77,11 @@ if __name__ == "__main__":
         external_lib_log_level="WARNING",
         rotate_logger_configuration=ROTATE_CONFIG,
         extra_handlers=[buffer_handler])
+
+
+if __name__ == "__main__":
     
+    init_logger()
     logger = logging.getLogger('Max')
     logger.debug("Deb")
     logger.info('inf')
