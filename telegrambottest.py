@@ -11,20 +11,28 @@ from json_manager import JsonManager
 from main import init_logger
 
 
-class IntervalThread(Thread):
-    def __init__(self, timeout, callback):
+class TimeoutThread(Thread):
+    def __init__(self, timeout, callback, repeat = False):
         Thread.__init__(self)
         self.__stop_event = Event()
         self.callback = callback
         self.timeout = timeout
+        self.repeat = repeat
+        self.start()
 
     def stop(self):
         self.__stop_event.set()
 
     def run(self):
+        print("TimeOut started")
+
         while not self.__stop_event.wait(self.timeout):
-            print("Timer")
+            print("TimeOut active")
             self.callback()
+            if not self.repeat:
+                break
+
+        print("TimeOut over")
 
 
 # logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -110,6 +118,9 @@ def joke(update: Update, context: CallbackContext):
 
     update.message.reply_text(joke_text)
 
+def timeout_test(update: Update, context: CallbackContext):
+    TimeoutThread(5, lambda: message_everybody(updater.bot))
+
 
 def unknown_command(update: Update, context: CallbackContext):
     context.bot.send_message(chat_id=update.message.chat_id, text="Sorry, I didn't understand that command.")
@@ -129,7 +140,8 @@ command_descriptions.update({
     '/help' : "Diese Hilfe, duuh",
     '/joke' : "Erzählt einen (schlechten) Witz",
     '/hello' : "Huhu",
-    '/echo' : "ECHO, Echo, echo..."
+    '/echo' : "ECHO, Echo, echo...",
+    '/timeout' : "timeout test for debuggin"
     })
 
 updater = Updater(token, use_context=True) # todo load bot ID from disk
@@ -142,13 +154,14 @@ updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_handler(CommandHandler('status', status))
 updater.dispatcher.add_handler(CommandHandler('day', return_day))
 updater.dispatcher.add_handler(CommandHandler('joke', joke))
+updater.dispatcher.add_handler(CommandHandler('timeout', timeout_test))
 updater.dispatcher.add_handler(MessageHandler(Filters._Command(), unknown_command))
 
 if len(updater.dispatcher.handlers[0]) - 1 != len(command_descriptions):
     # check if all commands are explained, the unknown command handler doesn't need explantion it is not callable
     logger.warning("Error with Command descriptions. Check if all commands are explained")
 
-t = IntervalThread(60, lambda: message_everybody(updater.bot))
+#t = TimeoutThread(15, lambda: message_everybody(updater.bot))
 # t.start()
 
 try:
@@ -158,4 +171,4 @@ try:
 finally:
     print("Forbei Ende Ous!")
     message_everybody(updater.bot, text="Ich fahre runter, bis bald!")
-    t.stop()
+    # t.stop()
